@@ -1,0 +1,6 @@
+Revision history for Perl extension Apache-SizeLimit.
+
+0.01  Fri Jun 23 22:46:53 2006
+	- original version; created by h2xs 1.23 with options
+		-X -A -n Apache-SizeLimit
+
