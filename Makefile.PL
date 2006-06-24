@@ -1,12 +1,37 @@
-use 5.008008;
+use strict;
+
+use Config;
 use ExtUtils::MakeMaker;
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
-WriteMakefile(
-    NAME              => 'Apache-SizeLimit',
-    VERSION_FROM      => 'lib/Apache-SizeLimit.pm', # finds $VERSION
-    PREREQ_PM         => {}, # e.g., Module::Name => 1.1
-    ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
-      (ABSTRACT_FROM  => 'lib/Apache-SizeLimit.pm', # retrieve abstract from module
-       AUTHOR         => 'Philip M. Gollucci <pgollucci@p6m7g8.net>') : ()),
-);
+
+my %prereqs = ( mod_perl => 0 );
+
+unless ( $ARGV[0] eq '--dist' ) {
+    if ( $Config{'osname'} eq 'linux' ) {
+        $prereqs{'Linux::Pid'} = 0;
+        if ( -e '/proc/self/smaps' ) {
+            $prereqs{'Linux::Smaps'} = 0;
+        }
+    }
+    elsif ( $Config{'osname'} =~ /(bsd|aix|darwin)/i ) {
+        $prereqs{'BSD::Resource'} = 0;
+    }
+    elsif ( $Config{'osname'} eq 'MSWin32' ) {
+        $prereqs{'Win32::API'} = 0;
+    }
+
+    if ( -f 't/apache/basic.t'
+         && eval { require Apache::TestMM } ) {
+        $prereqs{'Apache::Test'} = 0;
+
+        Apache::TestMM::filter_args();
+        Apache::TestMM::generate_script('t/TEST');
+    }
+}
+
+WriteMakefile( VERSION_FROM    => "lib/Apache/SizeLimit.pm",
+               NAME            => "Apache::SizeLimit",
+               PREREQ_PM       => \%prereqs,
+               ABSTRACT_FROM   => 'lib/Apache/SizeLimit.pm',
+               AUTHOR          => 'Dave Rolsky, <autarch@urth.org>',
+               clean           => { FILES => 't/TEST t/logs t/htdocs t/conf' },
+             );

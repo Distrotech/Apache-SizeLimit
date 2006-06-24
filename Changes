@@ -1,6 +1,40 @@
-Revision history for Perl extension Apache-SizeLimit.
+=head1 NAME
 
-0.01  Fri Jun 23 22:46:53 2006
-	- original version; created by h2xs 1.23 with options
-		-X -A -n Apache-SizeLimit
+Changes - Apache::SizeLimit change logfile
+
+=head1 CHANGES
+
+=over 2
+
+=item 0.04-dev
+Copied from the mod_perl 1 core for an independent CPAN release.
+[Philip M. Gollucci <pgollucci@p6m7g8.com>]
+
+Added support for using Linux::Smaps (on Linux only, obviously) to
+get much more accurate shared memory numbers on 2.6.x kernels. Taken
+from Apache2::SizeLimit.
+[Dave Rolsky <autarch@urth.org>
+
+Added support for using Linux::Pid to get the parent pid on
+Linux. This fixes a long-standing bug that caused this module to never
+actually kill a process when using Perl 5.8.1+ on Linux.
+[Dave Rolsky <autarch@urth.org>
+
+Lots of work on the docs.
+[Dave Rolsky <autarch@urth.org>
+
+When calling C<setmax()>, C<setmin()>, and C<setmax_unshared()>,
+only add Apache::SizeLimit as a cleanup handler once, not once for
+each function call. Taken from Apache2::SizeLimit.
+[Dave Rolsky <autarch@urth.org>
+
+Deprecated direct use of globals to set memory limits.
+[Dave Rolsky <autarch@urth.org>
+
+=item 0.01  Fri Jun 23 22:46:53 2006
+original version; created by h2xs 1.23 with options
+-X -A -n Apache-SizeLimit
+[Philip M. Gollucci <pgollucci@p6m7g8.com>]
+
+=back
 
