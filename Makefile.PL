@@ -32,6 +32,5 @@ WriteMakefile( VERSION_FROM    => "lib/Apache/SizeLimit.pm",
                NAME            => "Apache::SizeLimit",
                PREREQ_PM       => \%prereqs,
                ABSTRACT_FROM   => 'lib/Apache/SizeLimit.pm',
-               AUTHOR          => 'Dave Rolsky, <autarch@urth.org>',
                clean           => { FILES => 't/TEST t/logs t/htdocs t/conf' },
              );
