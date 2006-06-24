@@ -4,9 +4,9 @@ Changes - Apache::SizeLimit change logfile
 
 =head1 CHANGES
 
-=over 2
+=over 6
 
-=item 0.04-dev
+=item 0.06-dev
 Copied from the mod_perl 1 core for an independent CPAN release.
 [Philip M. Gollucci <pgollucci@p6m7g8.com>]
 
@@ -30,6 +30,14 @@ each function call. Taken from Apache2::SizeLimit.
 
 Deprecated direct use of globals to set memory limits.
 [Dave Rolsky <autarch@urth.org>
+
+=item 0.05 mp2 core / not released
+
+=item 0.04 not released
+
+=item 0.03 not released
+
+=item 0.02 not released
 
 =item 0.01  Fri Jun 23 22:46:53 2006
 original version; created by h2xs 1.23 with options

@@ -15,7 +15,7 @@ use vars qw(
     $USE_SMAPS
 );
 
-$VERSION                = '0.04';
+$VERSION                = '0.06';
 $CHECK_EVERY_N_REQUESTS = 1;
 $REQUEST_COUNT          = 1;
 $MAX_PROCESS_SIZE       = 0;
@@ -561,7 +561,7 @@ Matt Phillips <mphillips@virage.com> and Mohamed Hendawi
 <mhendawi@virage.com>: Win32 support
 
 Dave Rolsky <autarch@urth.org>, maintenance and fixes outside of
-mod_perl tree (0.04+).
+mod_perl tree (0.06).
 
 =cut
 
