@@ -3,7 +3,7 @@ package TestApache::basic;
 use strict;
 use warnings;
 
-use Test::More;
+use Apache::Test qw(-withtestmore);
 
 use Apache::Constants qw(OK);
 use Apache::SizeLimit;
@@ -12,13 +12,7 @@ use Apache::SizeLimit;
 sub handler {
     my $r = shift;
 
-    Test::Builder->new->output(*STDOUT);
-    Test::Builder->new->failure_output(*STDOUT);
-
-    $r->content_type('text/plain');
-    $r->send_http_header();
-
-    plan tests => 3;
+    plan $r, tests => 3;
 
     Apache::SizeLimit::setmax( 100_000 );
     Apache::SizeLimit::setmin( 1 );

@@ -66,6 +66,11 @@ sub MY::test {
 
     my $test = shift->MM::test(@_);
 
+  eval { require Test::More } or return <<EOF;
+test::
+\t\@echo sorry, cannot run tests without Test::More
+EOF
+
     return HAS_APACHE_TEST if HAS_APACHE_TEST;
 
     return $test;

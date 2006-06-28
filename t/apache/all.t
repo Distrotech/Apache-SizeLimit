@@ -30,5 +30,7 @@ sub my_need {
 
     $ok &= need_min_apache_version(1);
 
+    $ok &= need_min_module_version('Test::Builder' => '0.18_01');
+
     return $ok;
 }
