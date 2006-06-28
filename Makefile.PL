@@ -32,5 +32,19 @@ WriteMakefile( VERSION_FROM    => "lib/Apache/SizeLimit.pm",
                NAME            => "Apache::SizeLimit",
                PREREQ_PM       => \%prereqs,
                ABSTRACT_FROM   => 'lib/Apache/SizeLimit.pm',
-               clean           => { FILES => 't/TEST t/logs t/htdocs t/conf' },
+               clean           => { FILES => 't/TEST' },
              );
+
+sub MY::postamble {
+    my $self = shift;
+
+    my $string = $self->MM::postamble;
+
+    $string .= <<'EOF';
+tag :
+	svn copy https://svn.apache.org/repos/asf/perl/Apache-SizeLimit/trunk https://svn.apache.org/repos/asf/perl/Apache-SizeLimit/tags/$(VERSION_SYM)
+	@echo update lib/Apache/SizeLimit.pm VERSION now
+EOF
+
+    return $string;
+}
