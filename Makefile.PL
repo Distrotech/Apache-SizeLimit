@@ -18,15 +18,28 @@ unless ( $ARGV[0] eq '--dist' ) {
     elsif ( $Config{'osname'} eq 'MSWin32' ) {
         $prereqs{'Win32::API'} = 0;
     }
-
-    if ( -f 't/apache/basic.t'
-         && eval { require Apache::TestMM } ) {
-        $prereqs{'Apache::Test'} = 0;
-
-        Apache::TestMM::filter_args();
-        Apache::TestMM::generate_script('t/TEST');
-    }
 }
+
+use constant HAS_APACHE_TEST => eval {
+    require Apache::Test;
+    require Apache::TestMM;
+    require Apache::TestRunPerl;
+
+    Apache::TestMM->import(qw(test clean));
+    Apache::TestMM::filter_args();
+
+    my %args = @Apache::TestMM::Argv;
+
+    die 'suitable httpd required'
+      unless ($args{apxs} or $args{httpd} or
+              $ENV{APACHE_TEST_HTTPD} or $ENV{APACHE_TEST_APXS});
+
+    Apache::TestRunPerl->generate_script();
+
+    return Apache::TestMM->test;
+};
+
+
 
 WriteMakefile( VERSION_FROM    => "lib/Apache/SizeLimit.pm",
                NAME            => "Apache::SizeLimit",
@@ -47,4 +60,24 @@ tag :
 EOF
 
     return $string;
+}
+
+sub MY::test {
+
+    my $test = shift->MM::test(@_);
+
+    return HAS_APACHE_TEST if HAS_APACHE_TEST;
+
+    return $test;
+}
+
+sub MY::clean {
+
+    if (HAS_APACHE_TEST) {
+        require Apache::TestMM;
+
+        return Apache::TestMM::clean(@_);
+    }
+
+    return shift->MM::clean(@_);
 }

@@ -8,6 +8,6 @@ README
 RELEASE
 SUPPORT
 lib/Apache/SizeLimit.pm
-t/TEST.PL
 t/pod.t
 t/response/TestApache/basic.pm
+t/apache/all.t
