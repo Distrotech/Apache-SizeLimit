@@ -20,65 +20,189 @@ use Config;
 use strict;
 use vars qw(
     $VERSION
-    $MAX_PROCESS_SIZE
     $REQUEST_COUNT
-    $CHECK_EVERY_N_REQUESTS
-    $MIN_SHARE_SIZE
-    $MAX_UNSHARED_SIZE
     $START_TIME
-    $IS_WIN32
     $USE_SMAPS
 );
 
-$VERSION                = '0.9';
-$CHECK_EVERY_N_REQUESTS = 1;
+$VERSION = '0.9';
+
+__PACKAGE__->set_check_interval(1);
+
 $REQUEST_COUNT          = 1;
-$MAX_PROCESS_SIZE       = 0;
-$MIN_SHARE_SIZE         = 0;
-$MAX_UNSHARED_SIZE      = 0;
-$IS_WIN32               = 0;
 $USE_SMAPS              = 1;
 
-BEGIN {
+use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 
-    # decide at compile time how to check for a process' memory size.
+
+use vars qw( $MAX_PROCESS_SIZE );
+sub set_max_process_size {
+    my $class = shift;
+
+    $MAX_PROCESS_SIZE = shift;
+}
+
+use vars qw( $MAX_UNSHARED_SIZE );
+sub set_max_unshared_size {
+    my $class = shift;
+
+    $MAX_UNSHARED_SIZE = shift;
+}
+
+use vars qw( $MIN_SHARE_SIZE );
+sub set_min_shared_size {
+    my $class = shift;
+
+    $MIN_SHARE_SIZE = shift;
+}
+
+use vars qw( $CHECK_EVERY_N_REQUESTS );
+sub set_check_interval {
+    my $class = shift;
+
+    $CHECK_EVERY_N_REQUESTS = shift;
+}
+
+sub handler ($$) {
+    my $class = shift;
+    my $r = shift || Apache->request;
+
+    return DECLINED unless $r->is_main();
+
+    # we want to operate in a cleanup handler
+    if ( $r->current_callback eq 'PerlCleanupHandler' ) {
+        return $class->_exit_if_too_big($r);
+    }
+    else {
+        $class->add_cleanup_handler($r);
+    }
+
+    return DECLINED;
+}
+
+sub add_cleanup_handler {
+    my $class = shift;
+    my $r = shift || Apache->request;
+
+    return unless $r;
+    return if $r->pnotes('size_limit_cleanup');
+
+    # This used to use $r->post_connection but there's no good way to
+    # test it, since apparently it does not push a handler onto the
+    # PerlCleanupHandler phase. That means that there's no way to use
+    # $r->get_handlers() to check the results of calling this method.
+    $r->push_handlers( 'PerlCleanupHandler',
+                       sub { $class->_exit_if_too_big() } );
+    $r->pnotes( size_limit_cleanup => 1 );
+}
+
+sub _exit_if_too_big {
+    my $class = shift;
+    my $r = shift;
+
+    return DECLINED
+        if ( $CHECK_EVERY_N_REQUESTS
+             && ( $REQUEST_COUNT++ % $CHECK_EVERY_N_REQUESTS ) );
+
+    $START_TIME ||= time;
+
+    if ( $class->_limits_are_exceeded() ) {
+        my ( $size, $share, $unshared ) = $class->_check_size();
+
+        if ( IS_WIN32 || $class->real_getppid() > 1 ) {
+            # this is a child httpd
+            my $e   = time - $START_TIME;
+            my $msg = "httpd process too big, exiting at SIZE=$size KB";
+            $msg .= " SHARE=$share KB UNSHARED=$unshared" if ($share);
+            $msg .= " REQUESTS=$REQUEST_COUNT  LIFETIME=$e seconds";
+            $class->_error_log($msg);
+
+            if (IS_WIN32) {
+                # child_terminate() is disabled in win32 Apache
+                CORE::exit(-2);
+            }
+            else {
+                $r->child_terminate();
+            }
+        }
+        else {
+            # this is the main httpd, whose parent is init?
+            my $msg = "main process too big, SIZE=$size KB ";
+            $msg .= " SHARE=$share KB" if ($share);
+            $class->_error_log($msg);
+        }
+    }
+    return OK;
+}
+
+# REVIEW - Why doesn't this use $r->warn or some other
+# Apache/Apache::Log API?
+sub _error_log {
+    my $class = shift;
+
+    print STDERR "[", scalar( localtime(time) ),
+        "] ($$) Apache::SizeLimit @_\n";
+}
+
+sub _limits_are_exceeded {
+    my $class = shift;
+
+    my ( $size, $share, $unshared ) = $class->_check_size();
+
+    return 1 if $MAX_PROCESS_SIZE  && $size > $MAX_PROCESS_SIZE;
+
+    return 0 unless $share;
+
+    return 1 if $MIN_SHARE_SIZE    && $share < $MIN_SHARE_SIZE;
+
+    return 1 if $MAX_UNSHARED_SIZE && $unshared > $MAX_UNSHARED_SIZE;
+
+    return 0;
+}
+
+sub _check_size {
+    my ( $size, $share ) = _platform_check_size();
+
+    return ( $size, $share, $size - $share );
+}
+
+sub _load {
+    my $mod  = shift;
+
+    eval "require $mod"
+        or die "You must install $mod for Apache::SizeLimit to work on your platform.";
+}
+
+BEGIN {
     if (   $Config{'osname'} eq 'solaris'
         && $Config{'osvers'} >= 2.6 ) {
-        *check_size   = \&_solaris_2_6_size_check;
+        *_platform_check_size   = \&_solaris_2_6_size_check;
         *real_getppid = \&_perl_getppid;
     }
     elsif ( $Config{'osname'} eq 'linux' ) {
-        eval { require Linux::Pid }
-            or die "You must install Linux::Pid for Apache::SizeLimit to work on your platform.";
+        _load('Linux::Pid');
 
         *real_getppid = \&_linux_getppid;
 
         if ( eval { require Linux::Smaps } && Linux::Smaps->new($$) ) {
-            *check_size = \&_linux_smaps_size_check;
+            *_platform_check_size = \&_linux_smaps_size_check;
         }
         else {
             $USE_SMAPS = 0;
-            *check_size = \&_linux_size_check;
+            *_platform_check_size = \&_linux_size_check;
         }
     }
     elsif ( $Config{'osname'} =~ /(?:bsd|aix|darwin)/i ) {
-
         # will getrusage work on all BSDs?  I should hope so.
-        eval "require BSD::Resource;"
-            or die
-            "You must install BSD::Resource for Apache::SizeLimit to work on your platform.";
+        _load('BSD::Resource');
 
-        *check_size   = \&_bsd_size_check;
+        *_platform_check_size   = \&_bsd_size_check;
         *real_getppid = \&_perl_getppid;
     }
-    elsif ( $Config{'osname'} eq 'MSWin32' ) {
-        eval { require Win32::API }
-            or die
-            "You must install Win32::API for Apache::SizeLimit to work on your platform.";
+    elsif (IS_WIN32) {
+        _load('Win32::API');
 
-        $IS_WIN32 = 1;
-
-        *check_size   = \&_win32_size_check;
+        *_platform_check_size   = \&_win32_size_check;
         *real_getppid = \&_perl_getppid;
     }
     else {
@@ -87,13 +211,17 @@ BEGIN {
 }
 
 sub _linux_smaps_size_check {
-    return _linux_size_check() unless $USE_SMAPS;
+    my $class = shift;
+
+    return $class->_linux_size_check() unless $USE_SMAPS;
 
     my $s = Linux::Smaps->new($$)->all;
     return ($s->size, $s->shared_clean + $s->shared_dirty);
 }
 
 sub _linux_size_check {
+    my $class = shift;
+
     my ( $size, $resident, $share ) = ( 0, 0, 0 );
 
     if ( open my $fh, '<', '/proc/self/statm' ) {
@@ -101,7 +229,7 @@ sub _linux_size_check {
         close $fh;
     }
     else {
-        _error_log("Fatal Error: couldn't access /proc/self/status");
+        $class->_error_log("Fatal Error: couldn't access /proc/self/status");
     }
 
     # linux on intel x86 has 4KB page size...
@@ -109,8 +237,10 @@ sub _linux_size_check {
 }
 
 sub _solaris_2_6_size_check {
+    my $class = shift;
+
     my $size = -s "/proc/self/as"
-        or _error_log("Fatal Error: /proc/self/as doesn't exist or is empty");
+        or $class->_error_log("Fatal Error: /proc/self/as doesn't exist or is empty");
     $size = int( $size / 1024 );
 
     # return 0 for share, to avoid undef warnings
@@ -122,6 +252,8 @@ sub _bsd_size_check {
 }
 
 sub _win32_size_check {
+    my $class = shift;
+
     # get handle on current process
     my $get_current_process = Win32::API->new(
         'kernel32',
@@ -168,98 +300,34 @@ sub _win32_size_check {
 sub _perl_getppid { return getppid }
 sub _linux_getppid { return Linux::Pid::getppid() }
 
-sub _exit_if_too_big {
-    my $r = shift;
+{
+    # Deprecated APIs
 
-    return DECLINED
-        if ( $CHECK_EVERY_N_REQUESTS
-        && ( $REQUEST_COUNT++ % $CHECK_EVERY_N_REQUESTS ) );
+    sub setmax {
+        my $class = __PACKAGE__;
 
-    $START_TIME ||= time;
+        $class->set_max_process_size(shift);
 
-    my ( $size, $share ) = check_size();
-    my $unshared = $size - $share;
-
-    if (   ( $MAX_PROCESS_SIZE  && $size > $MAX_PROCESS_SIZE )
-        || ( $MIN_SHARE_SIZE    && $share < $MIN_SHARE_SIZE )
-        || ( $MAX_UNSHARED_SIZE && $unshared > $MAX_UNSHARED_SIZE ) ) {
-        # wake up! time to die.
-        if ( $IS_WIN32 || real_getppid() > 1 ) {
-            # this is a child httpd
-            my $e   = time - $START_TIME;
-            my $msg = "httpd process too big, exiting at SIZE=$size KB";
-            $msg .= " SHARE=$share KB UNSHARED=$unshared" if ($share);
-            $msg .= " REQUESTS=$REQUEST_COUNT  LIFETIME=$e seconds";
-            _error_log($msg);
-
-            if ($IS_WIN32) {
-                # child_terminate() is disabled in win32 Apache
-                CORE::exit(-2);
-            }
-            else {
-                $r->child_terminate();
-            }
-        }
-        else {
-            # this is the main httpd, whose parent is init?
-            my $msg = "main process too big, SIZE=$size KB ";
-            $msg .= " SHARE=$share KB" if ($share);
-            _error_log($msg);
-        }
-    }
-    return OK;
-}
-
-# setmax can be called from within a Registry script to tell the server
-# to exit if the script causes the process to grow too big.
-sub setmax {
-    $MAX_PROCESS_SIZE = shift;
-
-    _set_post_conn();
-}
-
-sub setmin {
-    $MIN_SHARE_SIZE = shift;
-
-    _set_post_conn();
-}
-
-sub setmax_unshared {
-    $MAX_UNSHARED_SIZE = shift;
-
-    _set_post_conn();
-}
-
-sub _set_post_conn {
-    my $r = Apache->request
-        or return;
-
-    return if $r->pnotes('size_limit_cleanup');
-
-    $r->post_connection( \&_exit_if_too_big );
-    $r->pnotes( size_limit_cleanup => 1 );
-}
-
-sub handler {
-    my $r = shift || Apache->request;
-
-    return DECLINED unless $r->is_main();
-
-    # we want to operate in a cleanup handler
-    if ( $r->current_callback eq 'PerlCleanupHandler' ) {
-        return _exit_if_too_big($r);
-    }
-    else {
-        $r->post_connection( \&_exit_if_too_big );
+        $class->add_cleanup_handler();
     }
 
-    return DECLINED;
+    sub setmin {
+        my $class = __PACKAGE__;
+
+        $class->set_min_shared_size(shift);
+
+        $class->add_cleanup_handler();
+    }
+
+    sub setmax_unshared {
+        my $class = __PACKAGE__;
+
+        $class->set_max_unshared_size(shift);
+
+        $class->add_cleanup_handler();
+    }
 }
 
-sub _error_log {
-    print STDERR "[", scalar( localtime(time) ),
-        "] ($$) Apache::SizeLimit @_\n";
-}
 
 1;
 
@@ -273,7 +341,9 @@ Apache::SizeLimit - Because size does matter.
 =head1 SYNOPSIS
 
     <Perl>
-     $Apache::SizeLimit::MAX_UNSHARED_SIZE = 120 * 1024; # 120MB
+     Apache::SizeLimit->set_max_process_size(150_000);   # Max size in KB
+     Apache::SizeLimit->set_min_shared_size(10_000);     # Min share in KB
+     Apache::SizeLimit->set_max_unshared_size(120_000);  # Max unshared size in KB
     </Perl>
 
     PerlCleanupHandler Apache::SizeLimit
@@ -291,28 +361,49 @@ exceeded, the process will be killed.
 You can also limit the frequency that these sizes are checked so that
 this module only checks every N requests.
 
-This module is highly platform dependent, please read the CAVEATS
-section.
+This module is highly platform dependent, please read the
+L<PER-PLATFORM BEHAVIOR> section for details. It is possible that this
+module simply does not support your platform.
 
 =head1 API
 
 You can set set the size limits from a Perl module or script loaded by
-Apache:
+Apache by calling the appropriate class method on C<Apache::SizeLimit>:
 
-    use Apache::SizeLimit;
+=over 4
 
-    Apache::SizeLimit::setmax(150_000);           # Max size in KB
-    Apache::SizeLimit::setmin(10_000);            # Min share in KB
-    Apache::SizeLimit::setmax_unshared(120_000);  # Max unshared size in KB
+=item * Apache::SizeLimit->set_max_process_size($size)
 
-Then in your Apache configuration, make Apache::SizeLimit a
-C<PerlCleanupHandler>:
+This sets the maximum size of the process, including both shared and
+unshared memory.
+
+=item * Apache::SizeLimit->set_max_unshared_size($size)
+
+This sets the maximum amount of I<unshared> memory the process can
+use.
+
+=item * Apache::SizeLimit->set_min_shared_size($size)
+
+This sets the minimum amount of shared memory the process must have.
+
+=back
+
+The two methods related to shared memory size are effectively a no-op
+if the module cannot determine the shared memory size for your
+platform. See L<PER-PLATFORM BEHAVIOR> for more details.
+
+=head2 Running the handler()
+
+There are several ways to make this module actually run the code to
+kill a process.
+
+The simplest is to make C<Apache::SizeLimit> a C<PerlCleanupHandler>
+in your Apache config:
 
     PerlCleanupHandler Apache::SizeLimit
 
-Calling any one of C<setmax()>, C<setmin()>, or C<setmax_unshared()>
-will install C<Apache::SizeLimit> as a cleanup handler for the current
-request, if it's not already installed.
+This will ensure that C<< Apache::SizeLimit->handler() >> is called
+run for all requests.
 
 If you want to combine this module with a cleanup handler of your own,
 make sure that C<Apache::SizeLimit> is the last handler run:
@@ -322,8 +413,8 @@ make sure that C<Apache::SizeLimit> is the last handler run:
 Remember, mod_perl will run stacked handlers from right to left, as
 they're defined in your configuration.
 
-You can explicitly call the C<Apache::SizeLimit::handler()> function
-from your own cleanup handler:
+You can also explicitly call the C<< Apache::SizeLimit->handler() >>
+function from your own cleanup handler:
 
     package My::CleanupHandler
 
@@ -334,64 +425,34 @@ from your own cleanup handler:
         # request
         File::Temp::cleanup();
 
-        return Apache::SizeLimit::handler($r);
+        return Apache::SizeLimit->handler($r);
     }
-
-Since checking the process size can take a few system calls on some
-platforms (e.g. linux), you may want to only check the process size
-every N times. To do so, simple set the
-C<$Apache::SizeLimit::CHECK_EVERY_N_REQUESTS> global.
-
-    $Apache::SizeLimit::CHECK_EVERY_N_REQUESTS = 2;
-
-Now C<Apache::SizeLimit> will only check the process size on every
-other request.
-
-=head2 Deprecated API
-
-Previous versions of this module documented three globals for defining
-memory size limits:
 
 =over 4
 
-=item * $Apache::SizeLimit::MAX_PROCESS_SIZE
+=item * Apache::SizeLimit->add_cleanup_handler($r)
 
-=item * $Apache::SizeLimit::MIN_SHARE_SIZE
-
-=item * $Apache::SizeLimit::MAX_UNSHARED_SIZE
+You can call this method inside a request to run C<Apache::SizeLimit>'s
+C<handler()> method for just that request. If this method is called
+repeatedly, it ensures that it only every adds one cleanup handler.
 
 =back
 
-Direct use of these globals is deprecated, but will continue to work
-for the foreseeable future.
+=head2 Checking Every N Requests
 
-=head1 ABOUT THIS MODULE
+Since checking the process size can take a few system calls on some
+platforms (e.g. linux), you may not want to check the process size for
+every request.
 
-This module was written in response to questions on the mod_perl
-mailing list on how to tell the httpd process to exit if it gets too
-big.
+=over 4
 
-Actually, there are two big reasons your httpd children will grow.
-First, your code could have a bug that causes the process to increase
-in size very quickly. Second, you could just be doing operations that
-require a lot of memory for each request. Since Perl does not give
-memory back to the system after using it, the process size can grow
-quite large.
+=item * Apache::SizeLimit->set_check_interval($interval)
 
-This module will not really help you with the first problem. For that
-you should probably look into C<Apache::Resource> or some other means
-of setting a limit on the data size of your program.  BSD-ish systems
-have C<setrlimit()>, which will kill your memory gobbling processes.
-However, it is a little violent, terminating your process in
-mid-request.
+Calling this causes C<Apache::SizeLimit> to only check the process
+size every C<$interval> requests. If you want this to affect all
+processes, make sure to call this during server startup.
 
-This module attempts to solve the second situation, where your process
-slowly grows over time. It checks memory usage after every request,
-and if it exceeds a threshold, exits gracefully.
-
-By using this module, you should be able to discontinue using the
-Apache configuration directive B<MaxRequestsPerChild>, although for
-some folks, using both in combination does the job.
+=back
 
 =head1 SHARED MEMORY OPTIONS
 
@@ -409,7 +470,7 @@ is because it only kills off processes that are truly using too much
 physical RAM, allowing most processes to live longer and reducing the
 process churn rate.
 
-=head1 CAVEATS
+=head1 PER-PLATFORM BEHAVIOR
 
 This module is highly platform dependent, since finding the size of a
 process is different for each OS, and some platforms may not be
@@ -423,31 +484,29 @@ Currently supported OSes:
 =head2 linux
 
 For linux we read the process size out of F</proc/self/statm>. If you
-are worried about performance, see if the CHECK_EVERY_N_REQUESTS
-option is of benefit.
+are worried about performance, you can consider using C<<
+Apache::SizeLimit->set_check_interval() >> to reduce how often this
+read happens.
 
-Since linux 2.6 F</proc/self/statm> does not report the amount of
-memory shared by the copy-on-write mechanism as shared memory. Hence
-decisions made on the basis of C<MAX_UNSHARED_SIZE> or
-C<MIN_SHARE_SIZE> are inherently wrong.
+As of linux 2.6, F</proc/self/statm> does not report the amount of
+memory shared by the copy-on-write mechanism as shared memory. This
+means that decisions made based on shared memory as reported by that
+interface are inherently wrong.
 
-To correct this situation, as of the 2.6.14 release of the kernel,
-there is F</proc/self/smaps> entry for each
-process. F</proc/self/smaps> reports various sizes for each memory
-segment of a process and allows us to count the amount of shared
-memory correctly.
+However, as of the 2.6.14 release of the kernel, there is
+F</proc/self/smaps> entry for each process. F</proc/self/smaps>
+reports various sizes for each memory segment of a process and allows
+us to count the amount of shared memory correctly.
 
 If C<Apache::SizeLimit> detects a kernel that supports
-F</proc/self/smaps> and if the C<Linux::Smaps> module is installed it
-will use them instead of F</proc/self/statm>. You can prevent
-C<Apache::SizeLimit> from using F</proc/self/smaps> and turn on the
-old behaviour by setting C<$Apache::SizeLimit::USE_SMAPS> to 0.
+F</proc/self/smaps> and the C<Linux::Smaps> module is installed it
+will use that module instead of F</proc/self/statm>.
 
-NOTE: Reading F</proc/self/smaps> is expensive compared to
+Reading F</proc/self/smaps> is expensive compared to
 F</proc/self/statm>. It must look at each page table entry of a
 process.  Further, on multiprocessor systems the access is
-synchronized with spinlocks. Hence, you may want to set the
-C<CHECK_EVERY_N_REQUESTS> option.
+synchronized with spinlocks. Again, you might consider using C<<
+Apache::SizeLimit->set_check_interval() >>.
 
 =head3 Copy-on-write and Shared Memory
 
@@ -463,9 +522,9 @@ The following example shows the effect of copy-on-write:
 
     sub handler {
       my $r = shift;
-      my ($size, $shared) = $Apache::SizeLimit::check_size();
+      my ($size, $shared) = $Apache::SizeLimit->_check_size();
       $x =~ tr/a/b/;
-      my ($size2, $shared2) = $Apache::SizeLimit::check_size();
+      my ($size2, $shared2) = $Apache::SizeLimit->_check_size();
       $r->content_type('text/plain');
       $r->print("1: size=$size shared=$shared\n");
       $r->print("2: size=$size2 shared=$shared2\n");
@@ -478,11 +537,11 @@ The following example shows the effect of copy-on-write:
     PerlResponseHandler X
   </Location>
 
-The parent apache allocates memory for the string in C<$x>. The
-C<tr>-command then overwrites all "a" with "b" if the handler is
-called with an argument. This write is done in place, thus, the
-process size doesn't change. Only C<$x> is not shared anymore by means
-of copy-on-write between the parent and the child.
+The parent Apache process allocates memory for the string in
+C<$x>. The C<tr>-command then overwrites all "a" with "b" if the
+handler is called with an argument. This write is done in place, thus,
+the process size doesn't change. Only C<$x> is not shared anymore by
+means of copy-on-write between the parent and the child.
 
 If F</proc/self/smaps> is available curl shows:
 
@@ -533,6 +592,71 @@ supplied ppm utility.
 If your platform is not supported, then please send a patch to check
 the process size. The more portable/efficient/correct the solution the
 better, of course.
+
+=head1 ABOUT THIS MODULE
+
+This module was written in response to questions on the mod_perl
+mailing list on how to tell the httpd process to exit if it gets too
+big.
+
+Actually, there are two big reasons your httpd children will grow.
+First, your code could have a bug that causes the process to increase
+in size very quickly. Second, you could just be doing operations that
+require a lot of memory for each request. Since Perl does not give
+memory back to the system after using it, the process size can grow
+quite large.
+
+This module will not really help you with the first problem. For that
+you should probably look into C<Apache::Resource> or some other means
+of setting a limit on the data size of your program.  BSD-ish systems
+have C<setrlimit()>, which will kill your memory gobbling processes.
+However, it is a little violent, terminating your process in
+mid-request.
+
+This module attempts to solve the second situation, where your process
+slowly grows over time. It checks memory usage after every request,
+and if it exceeds a threshold, exits gracefully.
+
+By using this module, you should be able to discontinue using the
+Apache configuration directive B<MaxRequestsPerChild>, although for
+some folks, using both in combination does the job.
+
+=head1 DEPRECATED APIS
+
+Previous versions of this module documented three globals for defining
+memory size limits:
+
+=over 4
+
+=item * $Apache::SizeLimit::MAX_PROCESS_SIZE
+
+=item * $Apache::SizeLimit::MIN_SHARE_SIZE
+
+=item * $Apache::SizeLimit::MAX_UNSHARED_SIZE
+
+=item * $Apache::SizeLimit::CHECK_EVERY_N_REQUESTS
+
+=item * $Apache::SizeLimit::USE_SMAPS
+
+=back
+
+Direct use of these globals is deprecated, but will continue to work
+for the foreseeable future.
+
+It also documented three functions for use from registry scripts:
+
+=over 4
+
+=item * Apache::SizeLimit::setmax()
+
+=item * Apache::SizeLimit::setmin()
+
+=item * Apache::SizeLimit::setmax_unshared()
+
+=back
+
+Besides setting the appropriate limit, these functions I<also> add a
+cleanup handler to the current request.
 
 =head1 AUTHOR
 
