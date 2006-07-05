@@ -20,7 +20,7 @@ unless ( $ARGV[0] eq '--dist' ) {
     }
 }
 
-use constant HAS_APACHE_TEST => check_for_apache_test();
+my $HAS_APACHE_TEST = check_for_apache_test();
 
 WriteMakefile( VERSION_FROM    => "lib/Apache/SizeLimit.pm",
                NAME            => "Apache::SizeLimit",
@@ -30,24 +30,21 @@ WriteMakefile( VERSION_FROM    => "lib/Apache/SizeLimit.pm",
              );
 
 sub check_for_apache_test {
-    return eval {
+    return unless eval {
         require Apache::Test;
         require Apache::TestMM;
         require Apache::TestRunPerl;
-
-        Apache::TestMM->import(qw(test clean));
-        Apache::TestMM::filter_args();
-
-        my %args = @Apache::TestMM::Argv;
-
-        die 'suitable httpd required'
-          unless ($args{apxs} or $args{httpd} or
-                  $ENV{APACHE_TEST_HTTPD} or $ENV{APACHE_TEST_APXS});
-
-        Apache::TestRunPerl->generate_script();
-
-        return Apache::TestMM->test;
+        1;
     };
+
+    Apache::TestMM->import(qw(test clean));
+    Apache::TestMM::filter_args();
+
+    my %args = @Apache::TestMM::Argv;
+
+    Apache::TestRunPerl->generate_script();
+
+    return 1;
 }
 
 sub MY::postamble {
@@ -65,26 +62,22 @@ EOF
 }
 
 sub MY::test {
+    my $self = shift;
 
-    my $test = shift->MM::test(@_);
-
-  eval { require Test::More } or return <<EOF;
+    eval { require Test::More } or return <<EOF;
 test::
 \t\@echo sorry, cannot run tests without Test::More
 EOF
 
-    return HAS_APACHE_TEST if HAS_APACHE_TEST;
+    return Apache::TestMM::test(@_) if $HAS_APACHE_TEST;
 
-    return $test;
+    return $self->MM::test(@_);
 }
 
 sub MY::clean {
+    my $self = shift;
 
-    if (HAS_APACHE_TEST) {
-        require Apache::TestMM;
-
-        return Apache::TestMM::clean(@_);
-    }
+    return Apache::TestMM::clean(@_) if $HAS_APACHE_TEST;
 
     return shift->MM::clean(@_);
 }
