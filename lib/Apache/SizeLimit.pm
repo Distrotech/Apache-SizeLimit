@@ -109,7 +109,7 @@ sub _exit_if_too_big {
     if ( $class->_limits_are_exceeded() ) {
         my ( $size, $share, $unshared ) = $class->_check_size();
 
-        if ( IS_WIN32 || $class->real_getppid() > 1 ) {
+        if ( IS_WIN32 || $class->_platform_getppid() > 1 ) {
             # this is a child httpd
             my $e   = time - $START_TIME;
             my $msg = "httpd process too big, exiting at SIZE=$size KB";
@@ -177,12 +177,12 @@ BEGIN {
     if (   $Config{'osname'} eq 'solaris'
         && $Config{'osvers'} >= 2.6 ) {
         *_platform_check_size   = \&_solaris_2_6_size_check;
-        *real_getppid = \&_perl_getppid;
+        *_platform_getppid = \&_perl_getppid;
     }
     elsif ( $Config{'osname'} eq 'linux' ) {
         _load('Linux::Pid');
 
-        *real_getppid = \&_linux_getppid;
+        *_platform_getppid = \&_linux_getppid;
 
         if ( eval { require Linux::Smaps } && Linux::Smaps->new($$) ) {
             *_platform_check_size = \&_linux_smaps_size_check;
@@ -197,13 +197,13 @@ BEGIN {
         _load('BSD::Resource');
 
         *_platform_check_size   = \&_bsd_size_check;
-        *real_getppid = \&_perl_getppid;
+        *_platform_getppid = \&_perl_getppid;
     }
     elsif (IS_WIN32) {
         _load('Win32::API');
 
         *_platform_check_size   = \&_win32_size_check;
-        *real_getppid = \&_perl_getppid;
+        *_platform_getppid = \&_perl_getppid;
     }
     else {
         die "Apache::SizeLimit is not implemented on your platform.";

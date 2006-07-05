@@ -29,7 +29,7 @@ sub handler {
             skip 'I have no idea what getppid() on Win32 might return', 1
                 if $Config{'osname'} eq 'MSWin32';
 
-            cmp_ok( Apache::SizeLimit::real_getppid(), '>', 1,
+            cmp_ok( Apache::SizeLimit->_platform_getppid(), '>', 1,
                     'real_getppid() > 1' );
         }
     }
