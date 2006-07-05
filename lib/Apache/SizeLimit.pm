@@ -30,7 +30,7 @@ use vars qw(
     $USE_SMAPS
 );
 
-$VERSION                = '0.06';
+$VERSION                = '0.9';
 $CHECK_EVERY_N_REQUESTS = 1;
 $REQUEST_COUNT          = 1;
 $MAX_PROCESS_SIZE       = 0;
@@ -87,7 +87,7 @@ BEGIN {
 }
 
 sub _linux_smaps_size_check {
-    goto &linux_size_check unless $USE_SMAPS;
+    return _linux_size_check() unless $USE_SMAPS;
 
     my $s = Linux::Smaps->new($$)->all;
     return ($s->size, $s->shared_clean + $s->shared_dirty);
@@ -123,13 +123,13 @@ sub _bsd_size_check {
 
 sub _win32_size_check {
     # get handle on current process
-    my $GetCurrentProcess = Win32::API->new(
+    my $get_current_process = Win32::API->new(
         'kernel32',
-        'GetCurrentProcess',
+        'get_current_process',
         [],
         'I'
     );
-    my $hProcess = $GetCurrentProcess->Call();
+    my $proc = $get_current_process->Call();
 
     # memory usage is bundled up in ProcessMemoryCounters structure
     # populated by GetProcessMemoryInfo() win32 call
@@ -138,39 +138,29 @@ sub _win32_size_check {
 
     # build a buffer structure to populate
     my $pmem_struct = "$DWORD" x 2 . "$SIZE_T" x 8;
-    my $pProcessMemoryCounters
+    my $mem_counters
         = pack( $pmem_struct, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 );
 
     # GetProcessMemoryInfo is in "psapi.dll"
-    my $GetProcessMemoryInfo = new Win32::API(
+    my $get_process_memory_info = new Win32::API(
         'psapi',
         'GetProcessMemoryInfo',
         [ 'I', 'P', 'I' ],
         'I'
     );
 
-    my $bool = $GetProcessMemoryInfo->Call(
-        $hProcess,
-        $pProcessMemoryCounters,
-        length($pProcessMemoryCounters)
+    my $bool = $get_process_memory_info->Call(
+        $proc,
+        $mem_counters,
+        length $mem_counters,
     );
 
     # unpack ProcessMemoryCounters structure
-    my (
-        $cb,
-        $PageFaultCount,
-        $PeakWorkingSetSize,
-        $WorkingSetSize,
-        $QuotaPeakPagedPoolUsage,
-        $QuotaPagedPoolUsage,
-        $QuotaPeakNonPagedPoolUsage,
-        $QuotaNonPagedPoolUsage,
-        $PagefileUsage,
-        $PeakPagefileUsage
-    ) = unpack( $pmem_struct, $pProcessMemoryCounters );
+    my $peak_working_set_size =
+        ( unpack( $pmem_struct, $mem_counters ) )[2];
 
     # only care about peak working set size
-    my $size = int( $PeakWorkingSetSize / 1024 );
+    my $size = int( $peak_working_set_size / 1024 );
 
     return ( $size, 0 );
 }
@@ -220,8 +210,8 @@ sub _exit_if_too_big {
     return OK;
 }
 
-# setmax can be called from within a CGI/Registry script to tell the httpd
-# to exit if the CGI causes the process to grow too big.
+# setmax can be called from within a Registry script to tell the server
+# to exit if the script causes the process to grow too big.
 sub setmax {
     $MAX_PROCESS_SIZE = shift;
 
@@ -244,7 +234,6 @@ sub _set_post_conn {
     my $r = Apache->request
         or return;
 
-    return if $Apache::Server::Starting || $Apache::Server::ReStarting;
     return if $r->pnotes('size_limit_cleanup');
 
     $r->post_connection( \&_exit_if_too_big );
@@ -284,7 +273,7 @@ Apache::SizeLimit - Because size does matter.
 =head1 SYNOPSIS
 
     <Perl>
-     $Apache::SizeLimit::MAX_UNSHARED_SIZE = 120000; # 120MB
+     $Apache::SizeLimit::MAX_UNSHARED_SIZE = 120 * 1024; # 120MB
     </Perl>
 
     PerlCleanupHandler Apache::SizeLimit
@@ -296,8 +285,8 @@ too large. You can make the decision to kill a process based on its
 overall size, by setting a minimum limit on shared memory, or a
 maximum on unshared memory.
 
-You can set limits for each of these sizes, and if any limit is not
-met, the process will be killed.
+You can set limits for each of these sizes, and if any limit is
+exceeded, the process will be killed.
 
 You can also limit the frequency that these sizes are checked so that
 this module only checks every N requests.
@@ -321,22 +310,9 @@ C<PerlCleanupHandler>:
 
     PerlCleanupHandler Apache::SizeLimit
 
-If you want to use C<Apache::SizeLimit> from a registry script, you
-must call one of the above functions for every request:
-
-    use Apache::SizeLimit
-
-    main();
-
-    sub {
-        Apache::SizeLimit::setmax(150_000);
-
-        # handle request
-    };
-
 Calling any one of C<setmax()>, C<setmin()>, or C<setmax_unshared()>
-will install C<Apache::SizeLimit> as a cleanup handler, if it's not
-already installed.
+will install C<Apache::SizeLimit> as a cleanup handler for the current
+request, if it's not already installed.
 
 If you want to combine this module with a cleanup handler of your own,
 make sure that C<Apache::SizeLimit> is the last handler run:
@@ -347,14 +323,16 @@ Remember, mod_perl will run stacked handlers from right to left, as
 they're defined in your configuration.
 
 You can explicitly call the C<Apache::SizeLimit::handler()> function
-from your own handler:
+from your own cleanup handler:
 
     package My::CleanupHandler
 
     sub handler {
         my $r = shift;
 
-        # do my thing
+        # Causes File::Temp to remove any temp dirs created during the
+        # request
+        File::Temp::cleanup();
 
         return Apache::SizeLimit::handler($r);
     }
@@ -420,8 +398,8 @@ some folks, using both in combination does the job.
 In addition to simply checking the total size of a process, this
 module can factor in how much of the memory used by the process is
 actually being shared by copy-on-write. If you don't understand how
-memory is shared in this way, take a look at the mod_perl Guide at
-http://perl.apache.org/guide/.
+memory is shared in this way, take a look at the mod_perl docs at
+http://perl.apache.org/docs/.
 
 You can take advantage of the shared memory information by setting a
 minimum shared size and/or a maximum unshared size. Experience on one
@@ -442,14 +420,10 @@ welcome.
 
 Currently supported OSes:
 
-=over 4
+=head2 linux
 
-=item linux
-
-For linux we read the process size out of F</proc/self/statm>.  This
-is a little slow, but usually not too bad. If you are worried about
-performance, try only setting up the the exit handler inside CGIs
-(with the C<setmax()> function), and see if the CHECK_EVERY_N_REQUESTS
+For linux we read the process size out of F</proc/self/statm>. If you
+are worried about performance, see if the CHECK_EVERY_N_REQUESTS
 option is of benefit.
 
 Since linux 2.6 F</proc/self/statm> does not report the amount of
@@ -469,16 +443,13 @@ will use them instead of F</proc/self/statm>. You can prevent
 C<Apache::SizeLimit> from using F</proc/self/smaps> and turn on the
 old behaviour by setting C<$Apache::SizeLimit::USE_SMAPS> to 0.
 
-C<Apache::SizeLimit> itself will C<$Apache::SizeLimit::USE_SMAPS> to 0
-if it cannot load C<Linux::Smaps> or if your kernel does not support
-F</proc/self/smaps>. Thus, you can check it to determine what is
-actually used.
-
 NOTE: Reading F</proc/self/smaps> is expensive compared to
-F</proc/self/statm>. It must look at each page table entry of a process.
-Further, on multiprocessor systems the access is synchronized with
-spinlocks. Hence, you are encouraged to set the C<CHECK_EVERY_N_REQUESTS>
-option.
+F</proc/self/statm>. It must look at each page table entry of a
+process.  Further, on multiprocessor systems the access is
+synchronized with spinlocks. Hence, you may want to set the
+C<CHECK_EVERY_N_REQUESTS> option.
+
+=head3 Copy-on-write and Shared Memory
 
 The following example shows the effect of copy-on-write:
 
@@ -488,7 +459,7 @@ The following example shows the effect of copy-on-write:
     use strict;
     use Apache::Constants qw(OK);
 
-    my $x= "a" x (1024*1024);
+    my $x = "a" x (1024*1024);
 
     sub handler {
       my $r = shift;
@@ -507,11 +478,11 @@ The following example shows the effect of copy-on-write:
     PerlResponseHandler X
   </Location>
 
-The parent apache allocates a megabyte for the string in C<$x>. The
+The parent apache allocates memory for the string in C<$x>. The
 C<tr>-command then overwrites all "a" with "b" if the handler is
 called with an argument. This write is done in place, thus, the
-process size doesn't change. Only C<$x> is not shared anymore by
-means of copy-on-write between the parent and the child.
+process size doesn't change. Only C<$x> is not shared anymore by means
+of copy-on-write between the parent and the child.
 
 If F</proc/self/smaps> is available curl shows:
 
@@ -530,7 +501,7 @@ Without F</proc/self/smaps> it says:
 One can see the kernel lies about the shared memory. It simply doesn't
 count copy-on-write pages as shared.
 
-=item solaris 2.6 and above
+=head2 solaris 2.6 and above
 
 For solaris we simply retrieve the size of F</proc/self/as>, which
 contains the address-space image of the process, and convert to KB.
@@ -540,24 +511,24 @@ NOTE: This is only known to work for solaris 2.6 and above. Evidently
 the F</proc> filesystem has changed between 2.5.1 and 2.6. Can anyone
 confirm or deny?
 
-=item *bsd*
+=head2 BSD (and OSX)
 
 Uses C<BSD::Resource::getrusage()> to determine process size.  This is
 pretty efficient (a lot more efficient than reading it from the
 F</proc> fs anyway).
 
-=item AIX?
+=head2 AIX?
 
 Uses C<BSD::Resource::getrusage()> to determine process size.  Not
 sure if the shared memory calculations will work or not.  AIX users?
 
-=item Win32
+=head2 Win32
 
 Uses C<Win32::API> to access process memory information.
 C<Win32::API> can be installed under ActiveState perl using the
 supplied ppm utility.
 
-=back
+=head2 Everything Else
 
 If your platform is not supported, then please send a patch to check
 the process size. The more portable/efficient/correct the solution the
@@ -576,7 +547,17 @@ Matt Phillips <mphillips@virage.com> and Mohamed Hendawi
 <mhendawi@virage.com>: Win32 support
 
 Dave Rolsky <autarch@urth.org>, maintenance and fixes outside of
-mod_perl tree (0.06).
+mod_perl tree (0.04+).
 
 =cut
 
+=head1 TODO
+
+* Create new set/get accessors for all globals, with nice names
+  (set_max_process_size) - keep old names with "push a handler a
+  behavior"
+
+* Add a new "add_cleanup_handler" method to push handler for one
+  request.
+
+=cut
