@@ -58,7 +58,7 @@ Instructions for Apache-SizeLimit Release Manager
 5. Announce the package
 
   a. post ... to the modperl, announce lists
-  Subject: [ANNOUNCE] Apache-SizeLimit 0.06
+  Subject: [ANNOUNCE] Apache-SizeLimit 0.9
      include 
   - MD5 sig (as it comes from CPAN upload announce).
   - the latest Changes
@@ -70,7 +70,7 @@ Instructions for Apache-SizeLimit Release Manager
   b. edit ./Changes:
      - start a new item with incremented version + '-dev'
 
-  =item 0.07-dev
+  =item 0.10-dev
 
   c. bump up version numbers in this file to make it easier to do the
      next release.
@@ -78,4 +78,4 @@ Instructions for Apache-SizeLimit Release Manager
      $ perl -pi -e 's/(\d+)\.(\d+)/join(".", $1, $2+1)/eg' RELEASE
 
   d. commit Changes
-     % svn ci -m "start 0.07-dev cycle" Changes RELEASE lib/Apache/SizeLimit.pm
+     % svn ci -m "start 0.10-dev cycle" Changes RELEASE lib/Apache/SizeLimit.pm
