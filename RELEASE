@@ -70,7 +70,7 @@ Instructions for Apache-SizeLimit Release Manager
   b. edit ./Changes:
      - start a new item with incremented version + '-dev'
 
-  =item 0.10-dev
+  =item 1.0-dev
 
   c. bump up version numbers in this file to make it easier to do the
      next release.
@@ -78,4 +78,4 @@ Instructions for Apache-SizeLimit Release Manager
      $ perl -pi -e 's/(\d+)\.(\d+)/join(".", $1, $2+1)/eg' RELEASE
 
   d. commit Changes
-     % svn ci -m "start 0.10-dev cycle" Changes RELEASE lib/Apache/SizeLimit.pm
+     % svn ci -m "start 1.0-dev cycle" Changes RELEASE lib/Apache/SizeLimit.pm
