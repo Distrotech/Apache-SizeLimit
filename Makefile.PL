@@ -20,26 +20,7 @@ unless ( $ARGV[0] eq '--dist' ) {
     }
 }
 
-use constant HAS_APACHE_TEST => eval {
-    require Apache::Test;
-    require Apache::TestMM;
-    require Apache::TestRunPerl;
-
-    Apache::TestMM->import(qw(test clean));
-    Apache::TestMM::filter_args();
-
-    my %args = @Apache::TestMM::Argv;
-
-    die 'suitable httpd required'
-      unless ($args{apxs} or $args{httpd} or
-              $ENV{APACHE_TEST_HTTPD} or $ENV{APACHE_TEST_APXS});
-
-    Apache::TestRunPerl->generate_script();
-
-    return Apache::TestMM->test;
-};
-
-
+use constant HAS_APACHE_TEST => check_for_apache_test();
 
 WriteMakefile( VERSION_FROM    => "lib/Apache/SizeLimit.pm",
                NAME            => "Apache::SizeLimit",
@@ -47,6 +28,27 @@ WriteMakefile( VERSION_FROM    => "lib/Apache/SizeLimit.pm",
                ABSTRACT_FROM   => 'lib/Apache/SizeLimit.pm',
                clean           => { FILES => 't/TEST' },
              );
+
+sub check_for_apache_test {
+    return eval {
+        require Apache::Test;
+        require Apache::TestMM;
+        require Apache::TestRunPerl;
+
+        Apache::TestMM->import(qw(test clean));
+        Apache::TestMM::filter_args();
+
+        my %args = @Apache::TestMM::Argv;
+
+        die 'suitable httpd required'
+          unless ($args{apxs} or $args{httpd} or
+                  $ENV{APACHE_TEST_HTTPD} or $ENV{APACHE_TEST_APXS});
+
+        Apache::TestRunPerl->generate_script();
+
+        return Apache::TestMM->test;
+    };
+}
 
 sub MY::postamble {
     my $self = shift;
