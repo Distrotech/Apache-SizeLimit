@@ -671,17 +671,6 @@ Matt Phillips <mphillips@virage.com> and Mohamed Hendawi
 <mhendawi@virage.com>: Win32 support
 
 Dave Rolsky <autarch@urth.org>, maintenance and fixes outside of
-mod_perl tree (0.04+).
-
-=cut
-
-=head1 TODO
-
-* Create new set/get accessors for all globals, with nice names
-  (set_max_process_size) - keep old names with "push a handler a
-  behavior"
-
-* Add a new "add_cleanup_handler" method to push handler for one
-  request.
+mod_perl tree (0.9+).
 
 =cut
