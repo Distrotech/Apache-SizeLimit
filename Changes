@@ -6,7 +6,7 @@ Changes - Apache::SizeLimit change logfile
 
 =over 6
 
-=item 0.06-dev
+=item 0.9-dev
 
 Copied from the mod_perl 1 core for an independent CPAN release.
 [Philip M. Gollucci <pgollucci@p6m7g8.com>]
@@ -21,15 +21,31 @@ Linux. This fixes a long-standing bug that caused this module to never
 actually kill a process when using Perl 5.8.1+ on Linux.
 [Dave Rolsky <autarch@urth.org>]
 
-Lots of work on the docs.
+Added new OO methods for configuring the module,
+C<set_max_process_size()>, C<set_min_shared_size()> ,and
+C<set_max_unshared_size()>.
+[Dave Rolsky <autarch@urth.org>]
+
+Added a new method, C<add_cleanup_handler()>.
+[Dave Rolsky <autarch@urth.org>]
+
+Documentation for new API, as well as lots of general work on the
+docs.
+[Dave Rolsky <autarch@urth.org>]
+
+Much code refactoring.
+[Dave Rolsky <autarch@urth.org>]
+
+Added many tests for both the new and deprecated APIs.
+[Dave Rolsky <autarch@urth.org>]
+
+Deprecated use of globals and the existing C<setmax()>, C<setmin()>,
+and C<setmax_unshared()> functions.
 [Dave Rolsky <autarch@urth.org>]
 
 When calling C<setmax()>, C<setmin()>, and C<setmax_unshared()>,
 only add Apache::SizeLimit as a cleanup handler once, not once for
 each function call. Taken from Apache2::SizeLimit.
-[Dave Rolsky <autarch@urth.org>]
-
-Deprecated direct use of globals to set memory limits.
 [Dave Rolsky <autarch@urth.org>]
 
 =item 0.05 mp2 core / not released
