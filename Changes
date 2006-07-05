@@ -6,7 +6,7 @@ Changes - Apache::SizeLimit change logfile
 
 =over 6
 
-=item 0.9-dev
+=item 0.9-rc1
 
 Copied from the mod_perl 1 core for an independent CPAN release.
 [Philip M. Gollucci <pgollucci@p6m7g8.com>]
