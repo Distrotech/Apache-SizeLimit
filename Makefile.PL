@@ -37,20 +37,18 @@ sub check_for_apache_test {
         1;
     };
 
-    Apache::TestMM->import(qw(test clean));
     Apache::TestMM::filter_args();
-
-    my %args = @Apache::TestMM::Argv;
-
     Apache::TestRunPerl->generate_script();
 
     return 1;
 }
 
-sub MY::postamble {
+package MY;
+
+sub postamble {
     my $self = shift;
 
-    my $string = $self->MM::postamble;
+    my $string = $self->SUPER::postamble;
 
     $string .= <<'EOF';
 tag :
@@ -61,7 +59,7 @@ EOF
     return $string;
 }
 
-sub MY::test {
+sub test {
     my $self = shift;
 
     eval { require Test::More } or return <<EOF;
@@ -69,15 +67,15 @@ test::
 \t\@echo sorry, cannot run tests without Test::More
 EOF
 
-    return Apache::TestMM::test(@_) if $HAS_APACHE_TEST;
+    return $self->Apache::TestMM::test(@_) if $HAS_APACHE_TEST;
 
-    return $self->MM::test(@_);
+    return $self->SUPER::test(@_);
 }
 
-sub MY::clean {
+sub clean {
     my $self = shift;
 
-    return Apache::TestMM::clean(@_) if $HAS_APACHE_TEST;
+    return $self->Apache::TestMM::clean(@_) if $HAS_APACHE_TEST;
 
-    return shift->MM::clean(@_);
+    return $self->SUPER::clean(@_);
 }
