@@ -32,6 +32,8 @@ Instructions for Apache-SizeLimit Release Manager
     f. if you happen to know that packages were added this release,
        make sure you give the correct permissions to them.
 
+1/2. run pod2text to update the README and commit any changes if neccessary.
+
 1. 'make dist' - to make sure nothing is missing from the manifest,
    etc. Now test this generated package (not svn) with as many
    configurations as possible on as many platforms as possible.
