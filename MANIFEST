@@ -11,3 +11,4 @@ t/pod.t
 t/response/TestApache/basic.pm
 t/response/TestApache/deprecated.pm
 t/apache/all.t
+META.yml                                 Module meta-data (added by MakeMaker)
