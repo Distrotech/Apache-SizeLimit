@@ -357,6 +357,16 @@ Apache::SizeLimit - Because size does matter.
 
 =head1 DESCRIPTION
 
+******************************** NOIICE ************************************
+    This version is only for httpd 1.x and mod_perl 1.x series.
+
+    Future versions of this module may support both.
+
+    Currently, Apache2::SizeLimit is bundled with mod_perl 2.x for that 
+    series.
+    
+******************************** NOTICE ************************************
+
 This module allows you to kill off Apache httpd processes if they grow
 too large. You can make the decision to kill a process based on its
 overall size, by setting a minimum limit on shared memory, or a
