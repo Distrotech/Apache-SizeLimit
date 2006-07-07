@@ -222,10 +222,10 @@ sub _linux_smaps_size_check {
 sub _linux_size_check {
     my $class = shift;
 
-    my ( $size, $resident, $share ) = ( 0, 0, 0 );
+    my ( $size, $share ) = ( 0, 0 );
 
     if ( open my $fh, '<', '/proc/self/statm' ) {
-        ( $size, $resident, $share ) = split /\s/, scalar <$fh>;
+        ( $size, $share ) = ( split /\s/, scalar <$fh> )[0,2]
         close $fh;
     }
     else {
