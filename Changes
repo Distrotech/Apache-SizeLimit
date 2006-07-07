@@ -48,6 +48,9 @@ only add Apache::SizeLimit as a cleanup handler once, not once for
 each function call. Taken from Apache2::SizeLimit.
 [Dave Rolsky <autarch@urth.org>]
 
+Fixed calculation of shared memory on BSD.
+[Philip M. Gollucci <pgollucci@p6m7g8.com>]
+
 =item 0.05 mp2 core / not released
 
 =item 0.04 not released
