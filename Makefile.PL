@@ -37,6 +37,7 @@ sub check_for_apache_test {
         1;
     };
 
+    Apache::TestMM::filter_args();
 
     my %args = @Apache::TestMM::Argv;
 
@@ -46,7 +47,6 @@ sub check_for_apache_test {
                 or $ENV{APACHE_TEST_HTTPD} or $ENV{APACHE_TEST_APXS});
 
 
-    Apache::TestMM::filter_args();
     Apache::TestRunPerl->generate_script();
 
     return 1;
