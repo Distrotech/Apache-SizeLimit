@@ -225,7 +225,7 @@ sub _linux_size_check {
     my ( $size, $share ) = ( 0, 0 );
 
     if ( open my $fh, '<', '/proc/self/statm' ) {
-        ( $size, $share ) = ( split /\s/, scalar <$fh> )[0,2]
+        ( $size, $share ) = ( split /\s/, scalar <$fh> )[0,2];
         close $fh;
     }
     else {
