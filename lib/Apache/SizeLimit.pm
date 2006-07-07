@@ -409,8 +409,8 @@ in your Apache config:
 
     PerlCleanupHandler Apache::SizeLimit
 
-This will ensure that C<< Apache::SizeLimit->handler() >> is called
-run for all requests.
+This will ensure that C<< Apache::SizeLimit->handler() >> is run
+for all requests.
 
 If you want to combine this module with a cleanup handler of your own,
 make sure that C<Apache::SizeLimit> is the last handler run:
@@ -420,8 +420,10 @@ make sure that C<Apache::SizeLimit> is the last handler run:
 Remember, mod_perl will run stacked handlers from right to left, as
 they're defined in your configuration.
 
-You can also explicitly call the C<< Apache::SizeLimit->handler() >>
-function from your own cleanup handler:
+If you have some cleanup code you need to run, but stacked handlers
+aren't appropriate for your setup, you can also explicitly call the
+C<< Apache::SizeLimit->handler() >> function from your own cleanup
+handler:
 
     package My::CleanupHandler
 
@@ -439,9 +441,10 @@ function from your own cleanup handler:
 
 =item * Apache::SizeLimit->add_cleanup_handler($r)
 
-You can call this method inside a request to run C<Apache::SizeLimit>'s
-C<handler()> method for just that request. If this method is called
-repeatedly, it ensures that it only every adds one cleanup handler.
+You can call this method inside a request to run
+C<Apache::SizeLimit>'s C<handler()> method for just that request. It's
+safe to call this method repeatedly -- the cleanup will only be run
+once per request.
 
 =back
 
