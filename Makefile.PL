@@ -42,7 +42,8 @@ sub check_for_apache_test {
     my %args = @Apache::TestMM::Argv;
 
     return 0
-        unless (-f Apache::TestConfig->custom_config_path()
+        unless (( Apache::TestConfig->can('custom_config_path')
+                  and -f Apache::TestConfig->custom_config_path())
                 or $args{apxs} or $args{httpd}
                 or $ENV{APACHE_TEST_HTTPD} or $ENV{APACHE_TEST_APXS});
 
