@@ -599,7 +599,7 @@ F</proc> fs anyway).
 
 According to recent tests on OSX (July, 2006), C<BSD::Resource> simply
 reports zero for process and shared size on that platform, so OSX is
-not supported by C<Apache::SizeLimit.
+not supported by C<Apache::SizeLimit>.
 
 =head2 AIX?
 
