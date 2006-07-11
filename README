@@ -224,6 +224,10 @@ PER-PLATFORM BEHAVIOR
     pretty efficient (a lot more efficient than reading it from the /proc fs
     anyway).
 
+    According to recent tests on OSX (July, 2006), "BSD::Resource" simply
+    reports zero for process and shared size on that platform, so OSX is not
+    supported by "Apache::SizeLimit".
+
   AIX?
     Uses "BSD::Resource::getrusage()" to determine process size. Not sure if
     the shared memory calculations will work or not. AIX users?
