@@ -19,7 +19,7 @@ sub my_need {
             $ok &= need_module('Linux::Smaps');
         }
     }
-    elsif ( $Config{'osname'} =~ /(bsd|aix|darwin)/i ) {
+    elsif ( $Config{'osname'} =~ /(bsd|aix)/i ) {
         $ok &= need_module('BSD::Resource');
     }
     elsif ( $Config{'osname'} eq 'MSWin32' ) {

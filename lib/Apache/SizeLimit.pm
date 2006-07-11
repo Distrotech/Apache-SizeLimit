@@ -192,8 +192,8 @@ BEGIN {
             *_platform_check_size = \&_linux_size_check;
         }
     }
-    elsif ( $Config{'osname'} =~ /(?:bsd|aix|darwin)/i ) {
-        # will getrusage work on all BSDs?  I should hope so.
+    elsif ( $Config{'osname'} =~ /(?:bsd|aix)/i ) {
+        # on OSX, getrusage() is returning 0 for proc & shared size.
         _load('BSD::Resource');
 
         *_platform_check_size   = \&_bsd_size_check;
@@ -248,8 +248,7 @@ sub _solaris_2_6_size_check {
 }
 
 # rss is in KB but ixrss is in BYTES.
-# This is true on at least FreeBSD, OpenBSD, NetBSD, and Darwin - Phil
-# Gollucci
+# This is true on at least FreeBSD, OpenBSD, & NetBSD - Phil Gollucci
 sub _bsd_size_check {
     my @results = BSD::Resource::getrusage();
     my $max_rss   = $results[2];
@@ -597,6 +596,10 @@ confirm or deny?
 Uses C<BSD::Resource::getrusage()> to determine process size.  This is
 pretty efficient (a lot more efficient than reading it from the
 F</proc> fs anyway).
+
+According to recent tests on OSX (July, 2006), C<BSD::Resource> simply
+reports zero for process and shared size on that platform, so OSX is
+not supported by C<Apache::SizeLimit.
 
 =head2 AIX?
 

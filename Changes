@@ -51,6 +51,10 @@ each function call. Taken from Apache2::SizeLimit.
 Fixed calculation of shared memory on BSD.
 [Philip M. Gollucci <pgollucci@p6m7g8.com>]
 
+Removed support for OSX, because testing shows that BSD::Resource is
+not working on that platform.
+[Dave Rolsky <autarch@urth.org>]
+
 =item 0.05 mp2 core / not released
 
 =item 0.04 not released

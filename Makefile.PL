@@ -12,7 +12,7 @@ unless ( $ARGV[0] eq '--dist' ) {
             $prereqs{'Linux::Smaps'} = 0;
         }
     }
-    elsif ( $Config{'osname'} =~ /(bsd|aix|darwin)/i ) {
+    elsif ( $Config{'osname'} =~ /(bsd|aix)/i ) {
         $prereqs{'BSD::Resource'} = 0;
     }
     elsif ( $Config{'osname'} eq 'MSWin32' ) {
