@@ -683,14 +683,19 @@ It also documented three functions for use from registry scripts:
 Besides setting the appropriate limit, these functions I<also> add a
 cleanup handler to the current request.
 
+=head1 SUPPORT
+
+Support for this module is available via the modperl users list
+(modperl@perl.apache.org).
+
 =head1 AUTHOR
 
 Doug Bagley <doug+modperl@bagley.org>, channeling Procrustes.
 
 Brian Moseley <ix@maz.org>: Solaris 2.6 support
 
-Doug Steinwand and Perrin Harkins <perrin@elem.com>: added support 
-    for shared memory and additional diagnostic info
+Doug Steinwand and Perrin Harkins <perrin@elem.com>: added support for
+shared memory and additional diagnostic info
 
 Matt Phillips <mphillips@virage.com> and Mohamed Hendawi
 <mhendawi@virage.com>: Win32 support
