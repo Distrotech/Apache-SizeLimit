@@ -5,7 +5,6 @@ MANIFEST
 MANIFEST.SKIP
 Makefile.PL
 README
-SUPPORT
 lib/Apache/SizeLimit.pm
 t/pod.t
 t/response/TestApache/basic.pm
