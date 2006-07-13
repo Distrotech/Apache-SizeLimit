@@ -685,8 +685,17 @@ cleanup handler to the current request.
 
 =head1 SUPPORT
 
-Support for this module is available via the modperl users list
-(modperl@perl.apache.org).
+The Apache-SizeLimit project is co-maintained by several developers,
+who take turns at making CPAN releases. Therefore you may find several
+CPAN directories containing Apache-SizeLimit releases. The best way to
+find the latest release is to use http://search.cpan.org/.
+
+If you have a question or you want to submit a bug report or make a
+contribution, please do not email individual authors, but send an
+email to the modperl <at> perl.apache.org mailing list. This list is
+moderated, so unless you are subscribed to it, your message will have
+to be approved first by a moderator. Therefore please allow some time
+(up to a few days) for your post to propagate to the list.
 
 =head1 AUTHOR
 
