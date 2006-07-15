@@ -15,9 +15,11 @@
 
 package Apache::SizeLimit;
 
+use strict;
+
 use Apache::Constants qw(DECLINED OK);
 use Config;
-use strict;
+
 use vars qw(
     $VERSION
     $REQUEST_COUNT
