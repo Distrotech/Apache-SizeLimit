@@ -20,7 +20,7 @@ my %hash = ();
 sub handler {
     my $r = shift;
 
-    plan $r, tests => 10;
+    plan $r, tests => 11;
 
     Apache::SizeLimit->add_cleanup_handler($r);
     Apache::SizeLimit->set_max_process_size(TEN_MB);
@@ -36,6 +36,12 @@ sub handler {
 
         is($i, $i, "now using $i MB of memory (at least)");
     }
+
+    is(
+       1,
+       Apache::SizeLimit->_limits_are_exceeded(), 
+       "we passed the limits and will _NOT_ kill the child"
+      );
 
     return Apache::Constants::OK;
 }
