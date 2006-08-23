@@ -311,7 +311,7 @@ __END__
 
 =head1 NAME
 
-Apache::SizeLimit - Because size does matter.
+Apache::BaseLimit - Because size does matter.
 
 =head1 SYNOPSIS
 
