@@ -19,9 +19,13 @@ use strict;
 use Config;
 
 use Apache2::RequestUtil ();
+use Apache2::MPM ();
 use Apache2::Const -compile => qw (DECLINED OK);
 
 use ModPerl::Util ();
+
+die "Apache2::SizeLimit at the moment works only with non-threaded MPMs"
+    if Apache2::MPM->is_threaded();
 
 use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 
