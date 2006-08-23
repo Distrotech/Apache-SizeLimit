@@ -32,7 +32,6 @@ $VERSION = '0.91-dev';
 __PACKAGE__->set_check_interval(1);
 
 $REQUEST_COUNT          = 1;
-$USE_SMAPS              = 1;
 
 use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 
@@ -187,6 +186,7 @@ BEGIN {
         *_platform_getppid = \&_linux_getppid;
 
         if ( eval { require Linux::Smaps } && Linux::Smaps->new($$) ) {
+            $USE_SMAPS = 1;
             *_platform_check_size = \&_linux_smaps_size_check;
         }
         else {
