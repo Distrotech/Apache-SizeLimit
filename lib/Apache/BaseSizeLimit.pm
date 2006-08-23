@@ -36,28 +36,28 @@ $USE_SMAPS              = 1;
 use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 
 
-use vars qw( $MAX_PROCESS_SIZE );
+use vars qw($MAX_PROCESS_SIZE);
 sub set_max_process_size {
     my $class = shift;
 
     $MAX_PROCESS_SIZE = shift;
 }
 
-use vars qw( $MAX_UNSHARED_SIZE );
+use vars qw($MAX_UNSHARED_SIZE);
 sub set_max_unshared_size {
     my $class = shift;
 
     $MAX_UNSHARED_SIZE = shift;
 }
 
-use vars qw( $MIN_SHARE_SIZE );
+use vars qw($MIN_SHARE_SIZE);
 sub set_min_shared_size {
     my $class = shift;
 
     $MIN_SHARE_SIZE = shift;
 }
 
-use vars qw( $CHECK_EVERY_N_REQUESTS );
+use vars qw($CHECK_EVERY_N_REQUESTS);
 sub set_check_interval {
     my $class = shift;
 
@@ -69,15 +69,15 @@ sub _exit_if_too_big {
     my $r = shift;
 
     return DECLINED
-        if ( $CHECK_EVERY_N_REQUESTS
-             && ( $REQUEST_COUNT++ % $CHECK_EVERY_N_REQUESTS ) );
+        if ($CHECK_EVERY_N_REQUESTS
+             && ($REQUEST_COUNT++ % $CHECK_EVERY_N_REQUESTS));
 
     $START_TIME ||= time;
 
-    if ( $class->_limits_are_exceeded() ) {
-        my ( $size, $share, $unshared ) = $class->_check_size();
+    if ($class->_limits_are_exceeded()) {
+        my ($size, $share, $unshared) = $class->_check_size();
 
-        if ( IS_WIN32 || $class->_platform_getppid() > 1 ) {
+        if (IS_WIN32 || $class->_platform_getppid() > 1) {
             # this is a child httpd
             my $e   = time - $START_TIME;
             my $msg = "httpd process too big, exiting at SIZE=$size KB";
@@ -115,7 +115,7 @@ sub _error_log {
 sub _limits_are_exceeded {
     my $class = shift;
 
-    my ( $size, $share, $unshared ) = $class->_check_size();
+    my ($size, $share, $unshared) = $class->_check_size();
 
     return 1 if $MAX_PROCESS_SIZE  && $size > $MAX_PROCESS_SIZE;
 
@@ -129,30 +129,29 @@ sub _limits_are_exceeded {
 }
 
 sub _check_size {
-    my ( $size, $share ) = _platform_check_size();
+    my ($size, $share) = _platform_check_size();
 
-    return ( $size, $share, $size - $share );
+    return ($size, $share, $size - $share);
 }
 
 sub _load {
-    my $mod  = shift;
+    my $mod = shift;
 
     eval "require $mod"
         or die "You must install $mod for Apache::SizeLimit to work on your platform.";
 }
 
 BEGIN {
-    if (   $Config{'osname'} eq 'solaris'
-        && $Config{'osvers'} >= 2.6 ) {
+    if ($Config{'osname'} eq 'solaris' && $Config{'osvers'} >= 2.6 ) {
         *_platform_check_size   = \&_solaris_2_6_size_check;
         *_platform_getppid = \&_perl_getppid;
     }
-    elsif ( $Config{'osname'} eq 'linux' ) {
+    elsif ($Config{'osname'} eq 'linux') {
         _load('Linux::Pid');
 
         *_platform_getppid = \&_linux_getppid;
 
-        if ( eval { require Linux::Smaps } && Linux::Smaps->new($$) ) {
+        if (eval { require Linux::Smaps } && Linux::Smaps->new($$)) {
             *_platform_check_size = \&_linux_smaps_size_check;
         }
         else {
@@ -160,7 +159,7 @@ BEGIN {
             *_platform_check_size = \&_linux_size_check;
         }
     }
-    elsif ( $Config{'osname'} =~ /(?:bsd|aix)/i ) {
+    elsif ($Config{'osname'} =~ /(?:bsd|aix)/i) {
         # on OSX, getrusage() is returning 0 for proc & shared size.
         _load('BSD::Resource');
 
@@ -190,10 +189,10 @@ sub _linux_smaps_size_check {
 sub _linux_size_check {
     my $class = shift;
 
-    my ( $size, $share ) = ( 0, 0 );
+    my ($size, $share) = (0, 0);
 
-    if ( open my $fh, '<', '/proc/self/statm' ) {
-        ( $size, $share ) = ( split /\s/, scalar <$fh> )[0,2];
+    if (open my $fh, '<', '/proc/self/statm') {
+        ($size, $share) = (split /\s/, scalar <$fh>)[0,2];
         close $fh;
     }
     else {
@@ -201,7 +200,7 @@ sub _linux_size_check {
     }
 
     # linux on intel x86 has 4KB page size...
-    return ( $size * 4, $share * 4 );
+    return ($size * 4, $share * 4);
 }
 
 sub _solaris_2_6_size_check {
@@ -209,20 +208,21 @@ sub _solaris_2_6_size_check {
 
     my $size = -s "/proc/self/as"
         or $class->_error_log("Fatal Error: /proc/self/as doesn't exist or is empty");
-    $size = int( $size / 1024 );
+    $size = int($size / 1024);
 
     # return 0 for share, to avoid undef warnings
-    return ( $size, 0 );
+    return ($size, 0);
 }
 
 # rss is in KB but ixrss is in BYTES.
-# This is true on at least FreeBSD, OpenBSD, & NetBSD - Phil Gollucci
+# This is true on at least FreeBSD, OpenBSD, & NetBSD
 sub _bsd_size_check {
+
     my @results = BSD::Resource::getrusage();
     my $max_rss   = $results[2];
     my $max_ixrss = int ( $results[3] / 1024 );
 
-    return ( $max_rss, $max_ixrss );
+    return ($max_rss, $max_ixrss);
 }
 
 sub _win32_size_check {
@@ -263,12 +263,12 @@ sub _win32_size_check {
 
     # unpack ProcessMemoryCounters structure
     my $peak_working_set_size =
-        ( unpack( $pmem_struct, $mem_counters ) )[2];
+        (unpack($pmem_struct, $mem_counters))[2];
 
     # only care about peak working set size
-    my $size = int( $peak_working_set_size / 1024 );
+    my $size = int($peak_working_set_size / 1024);
 
-    return ( $size, 0 );
+    return ($size, 0);
 }
 
 sub _perl_getppid { return getppid }
@@ -278,6 +278,7 @@ sub _linux_getppid { return Linux::Pid::getppid() }
     # Deprecated APIs
 
     sub setmax {
+
         my $class = __PACKAGE__;
 
         $class->set_max_process_size(shift);
@@ -286,6 +287,7 @@ sub _linux_getppid { return Linux::Pid::getppid() }
     }
 
     sub setmin {
+
         my $class = __PACKAGE__;
 
         $class->set_min_shared_size(shift);
@@ -294,6 +296,7 @@ sub _linux_getppid { return Linux::Pid::getppid() }
     }
 
     sub setmax_unshared {
+
         my $class = __PACKAGE__;
 
         $class->set_max_unshared_size(shift);
@@ -302,9 +305,7 @@ sub _linux_getppid { return Linux::Pid::getppid() }
     }
 }
 
-
 1;
-
 
 __END__
 
