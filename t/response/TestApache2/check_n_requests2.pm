@@ -8,7 +8,7 @@ use Apache::Log;
 
 use Apache::Test qw(-withtestmore);
 
-use Apache::SizeLimit;
+use Apache2::SizeLimit;
 
 use constant ONE_MB    => 1024;
 use constant TEN_MB    => ONE_MB * 10;
@@ -22,10 +22,10 @@ sub handler {
 
     plan $r, tests => 11;
 
-    Apache::SizeLimit->add_cleanup_handler($r);
-    Apache::SizeLimit->set_max_process_size(TEN_MB);
+    Apache2::SizeLimit->add_cleanup_handler($r);
+    Apache2::SizeLimit->set_max_process_size(TEN_MB);
     ## this should cause us _NOT_ to fire
-    Apache::SizeLimit->set_check_interval(5);
+    Apache2::SizeLimit->set_check_interval(5);
 
     # We can assume this will use _at least_ 1MB of memory, based on
     # assuming a scalar consumes >= 1K.
@@ -39,7 +39,7 @@ sub handler {
 
     is(
        1,
-       Apache::SizeLimit->_limits_are_exceeded(), 
+       Apache2::SizeLimit->_limits_are_exceeded(), 
        "we passed the limits and will _NOT_ kill the child"
       );
 

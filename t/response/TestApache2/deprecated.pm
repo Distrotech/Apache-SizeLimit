@@ -6,7 +6,7 @@ use warnings;
 use Apache::Test qw(-withtestmore);
 
 use Apache::Constants qw(OK);
-use Apache::SizeLimit;
+use Apache2::SizeLimit;
 
 
 sub handler {
@@ -18,16 +18,16 @@ sub handler {
     is( scalar @$handlers, 0,
         'there is no PerlCleanupHandler before add_cleanup_handler()' );
 
-    Apache::SizeLimit::setmax( 100_000 );
-    is( $Apache::SizeLimit::MAX_PROCESS_SIZE, 100_000,
+    Apache2::SizeLimit::setmax( 100_000 );
+    is( $Apache2::SizeLimit::MAX_PROCESS_SIZE, 100_000,
         'setmax changes $MAX_PROCESS_SIZE' );
 
-    Apache::SizeLimit::setmin( 1 );
-    is( $Apache::SizeLimit::MIN_SHARE_SIZE, 1,
+    Apache2::SizeLimit::setmin( 1 );
+    is( $Apache2::SizeLimit::MIN_SHARE_SIZE, 1,
         'setmax changes $MIN_SHARE_SIZE' );
 
-    Apache::SizeLimit::setmax_unshared( 1 );
-    is( $Apache::SizeLimit::MIN_SHARE_SIZE, 1,
+    Apache2::SizeLimit::setmax_unshared( 1 );
+    is( $Apache2::SizeLimit::MIN_SHARE_SIZE, 1,
         'setmax_unshared changes $MAX_UNSHARED_SIZE' );
 
     $handlers = $r->get_handlers('PerlCleanupHandler');

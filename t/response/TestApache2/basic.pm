@@ -1,4 +1,4 @@
-package TestApache::basic;
+package TestApache2::basic;
 
 use strict;
 use warnings;
@@ -6,7 +6,7 @@ use warnings;
 use Apache::Test qw(-withtestmore);
 
 use Apache::Constants qw(OK);
-use Apache::SizeLimit;
+use Apache2::SizeLimit;
 use Config;
 
 use constant ONE_MB => 1024;
@@ -17,11 +17,11 @@ sub handler {
 
     plan $r, tests => 12;
 
-    ok( ! Apache::SizeLimit->_limits_are_exceeded(),
+    ok( ! Apache2::SizeLimit->_limits_are_exceeded(),
         'check that _limits_are_exceeded() returns false without any limits set' );
 
     {
-        my ( $size, $shared ) = Apache::SizeLimit->_check_size();
+        my ( $size, $shared ) = Apache2::SizeLimit->_check_size();
         cmp_ok( $size, '>', 0, 'proc size is reported > 0' );
 
     SKIP:
@@ -29,7 +29,7 @@ sub handler {
             skip 'I have no idea what getppid() on Win32 might return', 1
                 if $Config{'osname'} eq 'MSWin32';
 
-            cmp_ok( Apache::SizeLimit->_platform_getppid(), '>', 1,
+            cmp_ok( Apache2::SizeLimit->_platform_getppid(), '>', 1,
                     'real_getppid() > 1' );
         }
     }
@@ -39,12 +39,12 @@ sub handler {
         # assuming a scalar consumes >= 1K.
         my @big = ('x') x TEN_MB;
 
-        my ( $size, $shared ) = Apache::SizeLimit->_check_size();
+        my ( $size, $shared ) = Apache2::SizeLimit->_check_size();
         cmp_ok( $size, '>', TEN_MB, 'proc size is reported > ' . TEN_MB );
 
-        Apache::SizeLimit->set_max_process_size(ONE_MB);
+        Apache2::SizeLimit->set_max_process_size(ONE_MB);
 
-        ok( Apache::SizeLimit->_limits_are_exceeded(),
+        ok( Apache2::SizeLimit->_limits_are_exceeded(),
             'check that _limits_are_exceeded() returns true based on max process size' );
 
     SKIP:
@@ -54,16 +54,16 @@ sub handler {
 
             cmp_ok( $size, '>', $shared, 'proc size is greater than shared size' );
 
-            Apache::SizeLimit->set_max_process_size(0);
-            Apache::SizeLimit->set_min_shared_size( ONE_MB * 100 );
+            Apache2::SizeLimit->set_max_process_size(0);
+            Apache2::SizeLimit->set_min_shared_size( ONE_MB * 100 );
 
-            ok( Apache::SizeLimit->_limits_are_exceeded(),
+            ok( Apache2::SizeLimit->_limits_are_exceeded(),
                 'check that _limits_are_exceeded() returns true based on min share size' );
 
-            Apache::SizeLimit->set_min_shared_size(0);
-            Apache::SizeLimit->set_max_unshared_size(1);
+            Apache2::SizeLimit->set_min_shared_size(0);
+            Apache2::SizeLimit->set_max_unshared_size(1);
 
-            ok( Apache::SizeLimit->_limits_are_exceeded(),
+            ok( Apache2::SizeLimit->_limits_are_exceeded(),
                 'check that _limits_are_exceeded() returns true based on max unshared size' );
         }
     }
@@ -71,27 +71,27 @@ sub handler {
     {
         # Lame test - A way to check that setting this _does_
         # something would be welcome ;)
-        Apache::SizeLimit->set_check_interval(10);
-        is( $Apache::SizeLimit::CHECK_EVERY_N_REQUESTS, 10,
+        Apache2::SizeLimit->set_check_interval(10);
+        is( $Apache2::SizeLimit::CHECK_EVERY_N_REQUESTS, 10,
             'set_check_interval set global' );
     }
 
     {
-        Apache::SizeLimit->set_max_process_size(0);
-        Apache::SizeLimit->set_min_shared_size(0);
-        Apache::SizeLimit->set_max_unshared_size(0);
+        Apache2::SizeLimit->set_max_process_size(0);
+        Apache2::SizeLimit->set_min_shared_size(0);
+        Apache2::SizeLimit->set_max_unshared_size(0);
 
         my $handlers = $r->get_handlers('PerlCleanupHandler');
         is( scalar @$handlers, 0,
             'there is no PerlCleanupHandler before add_cleanup_handler()' );
 
-        Apache::SizeLimit->add_cleanup_handler($r);
+        Apache2::SizeLimit->add_cleanup_handler($r);
 
         $handlers = $r->get_handlers('PerlCleanupHandler');
         is( scalar @$handlers, 1,
             'there is one PerlCleanupHandler after add_cleanup_handler()' );
 
-        Apache::SizeLimit->add_cleanup_handler($r);
+        Apache2::SizeLimit->add_cleanup_handler($r);
 
         $handlers = $r->get_handlers('PerlCleanupHandler');
         is( scalar @$handlers, 1,
