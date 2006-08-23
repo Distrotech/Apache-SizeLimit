@@ -26,6 +26,10 @@ use vars qw($VERSION);
 
 $VERSION = '0.91-dev';
 
+use Apache::BaseSizeLimit;
+use vars qw(@ISA);
+@ISA = qw(Apache::BaseSizeLimit);
+
 __PACKAGE__->set_check_interval(1);
 
 sub handler ($$) {
