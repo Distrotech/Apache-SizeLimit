@@ -18,7 +18,6 @@ package Apache::SizeLimit;
 use strict;
 
 use Apache::Constants qw(DECLINED OK);
-use Config;
 
 use vars qw($VERSION);
 
