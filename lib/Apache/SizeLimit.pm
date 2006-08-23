@@ -30,7 +30,7 @@ sub handler ($$) {
     return DECLINED unless $r->is_main();
 
     # we want to operate in a cleanup handler
-    if ( $r->current_callback eq 'PerlCleanupHandler' ) {
+    if ($r->current_callback eq 'PerlCleanupHandler') {
         return $class->_exit_if_too_big($r);
     }
     else {
@@ -51,13 +51,12 @@ sub add_cleanup_handler {
     # test it, since apparently it does not push a handler onto the
     # PerlCleanupHandler phase. That means that there's no way to use
     # $r->get_handlers() to check the results of calling this method.
-    $r->push_handlers( 'PerlCleanupHandler',
-                       sub { $class->_exit_if_too_big(shift) } );
-    $r->pnotes( size_limit_cleanup => 1 );
+    $r->push_handlers('PerlCleanupHandler',
+                      sub { $class->_exit_if_too_big(shift) });
+    $r->pnotes(size_limit_cleanup => 1);
 }
 
 1;
-
 
 __END__
 
@@ -79,14 +78,14 @@ Apache::SizeLimit - Because size does matter.
 
 ******************************** NOIICE *******************
 
-    This version is only for httpd 1.x and mod_perl 1.x 
+    This version is only for httpd 1.x and mod_perl 1.x
     series.
 
     Future versions of this module may support both.
 
-    Currently, Apache2::SizeLimit is bundled with 
+    Currently, Apache2::SizeLimit is bundled with
     mod_perl 2.x for that series.
-    
+
 ******************************** NOTICE *******************
 
 This module allows you to kill off Apache httpd processes if they grow
