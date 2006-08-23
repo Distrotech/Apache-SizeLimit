@@ -17,32 +17,34 @@ package Apache2::SizeLimit;
 
 use strict;
 
-use Apache::Constants qw(DECLINED OK);
+use Apache2::RequestUtil ();
+use Apache2::Const -compile => qw (DECLINED OK);
 
-use vars qw($VERSION)
+use ModPerl::Util ();
 
-$VERSION = '0.91-dev';
+# 2.x requires 5.6.x+ so 'our' is okay
+our $VERSION = '0.91-dev';
 
 sub handler ($$) {
     my $class = shift;
-    my $r = shift || Apache->request;
+    my $r = shift || Apache2::RequestUtil->request();
 
-    return DECLINED unless $r->is_main();
+    return Apache2::Const::DECLINED unless $r->is_initial_req();
 
     # we want to operate in a cleanup handler
-    if ( $r->current_callback eq 'PerlCleanupHandler' ) {
+    if (ModPerl::Util::current_callback() eq 'PerlCleanupHandler') {
         return $class->_exit_if_too_big($r);
     }
     else {
         $class->add_cleanup_handler($r);
     }
 
-    return DECLINED;
+    return Apache2::Const::DECLINED;
 }
 
 sub add_cleanup_handler {
     my $class = shift;
-    my $r = shift || Apache->request;
+    my $r = shift || Apache2::RequestUtil->request();
 
     return unless $r;
     return if $r->pnotes('size_limit_cleanup');
@@ -51,9 +53,12 @@ sub add_cleanup_handler {
     # test it, since apparently it does not push a handler onto the
     # PerlCleanupHandler phase. That means that there's no way to use
     # $r->get_handlers() to check the results of calling this method.
-    $r->push_handlers( 'PerlCleanupHandler',
-                       sub { $class->_exit_if_too_big(shift) } );
-    $r->pnotes( size_limit_cleanup => 1 );
+    $r->push_handlers(
+                      'PerlCleanupHandler',
+                      sub { $class->_exit_if_too_big(shift) }
+                     );
+
+    $r->pnotes(size_limit_cleanup => 1);
 }
 
 1;
