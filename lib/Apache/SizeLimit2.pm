@@ -28,6 +28,8 @@ use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 # 2.x requires 5.6.x+ so 'our' is okay
 our $VERSION = '0.91-dev';
 
+__PACKAGE__->set_check_interval(1);
+
 sub handler ($$) {
     my $class = shift;
     my $r = shift || Apache2::RequestUtil->request();

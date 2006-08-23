@@ -26,6 +26,8 @@ use vars qw($VERSION);
 
 $VERSION = '0.91-dev';
 
+__PACKAGE__->set_check_interval(1);
+
 sub handler ($$) {
     my $class = shift;
     my $r = shift || Apache->request;
@@ -124,11 +126,6 @@ Apache::SizeLimit - Because size does matter.
 
     This version is only for httpd 1.x and mod_perl 1.x
     series.
-
-    Future versions of this module may support both.
-
-    Currently, Apache2::SizeLimit is bundled with
-    mod_perl 2.x for that series.
 
 ******************************** NOTICE *******************
 

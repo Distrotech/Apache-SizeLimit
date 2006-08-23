@@ -27,8 +27,6 @@ use vars qw(
 
 $VERSION = '0.91-dev';
 
-__PACKAGE__->set_check_interval(1);
-
 $REQUEST_COUNT          = 1;
 $USE_SMAPS              = 1;
 
