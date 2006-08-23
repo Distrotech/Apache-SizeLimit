@@ -16,11 +16,14 @@
 package Apache2::SizeLimit;
 
 use strict;
+use Config;
 
 use Apache2::RequestUtil ();
 use Apache2::Const -compile => qw (DECLINED OK);
 
 use ModPerl::Util ();
+
+use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 
 # 2.x requires 5.6.x+ so 'our' is okay
 our $VERSION = '0.91-dev';
@@ -59,6 +62,39 @@ sub add_cleanup_handler {
                      );
 
     $r->pnotes(size_limit_cleanup => 1);
+}
+
+sub _exit_if_too_big {
+    my $class = shift;
+    my $r = shift;
+
+    return Apache2::Const::DECLINED
+        if ($CHECK_EVERY_N_REQUESTS
+             && ($REQUEST_COUNT++ % $CHECK_EVERY_N_REQUESTS));
+
+    $START_TIME ||= time;
+
+    if ($class->_limits_are_exceeded()) {
+        my ($size, $share, $unshared) = $class->_check_size();
+
+        if (IS_WIN32 || $class->_platform_getppid() > 1) {
+            # this is a child httpd
+            my $e   = time - $START_TIME;
+            my $msg = "httpd process too big, exiting at SIZE=$size KB";
+            $msg .= " SHARE=$share KB UNSHARED=$unshared" if ($share);
+            $msg .= " REQUESTS=$REQUEST_COUNT  LIFETIME=$e seconds";
+            $class->_error_log($msg);
+
+            $r->child_terminate();
+        }
+        else {
+            # this is the main httpd, whose parent is init?
+            my $msg = "main process too big, SIZE=$size KB ";
+            $msg .= " SHARE=$share KB" if ($share);
+            $class->_error_log($msg);
+        }
+    }
+    return Apache2::Const::OK;
 }
 
 1;

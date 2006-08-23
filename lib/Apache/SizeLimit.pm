@@ -16,8 +16,11 @@
 package Apache::SizeLimit;
 
 use strict;
+use Config;
 
-use Apache::Constants qw(DECLINED OK);
+use Apache::Constants ();
+
+use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 
 use vars qw($VERSION);
 
@@ -27,7 +30,7 @@ sub handler ($$) {
     my $class = shift;
     my $r = shift || Apache->request;
 
-    return DECLINED unless $r->is_main();
+    return Apache::Constants::DECLINED() unless $r->is_main();
 
     # we want to operate in a cleanup handler
     if ($r->current_callback eq 'PerlCleanupHandler') {
@@ -37,7 +40,7 @@ sub handler ($$) {
         $class->add_cleanup_handler($r);
     }
 
-    return DECLINED;
+    return Apache::Constants::DECLINED();
 }
 
 sub add_cleanup_handler {
@@ -54,6 +57,45 @@ sub add_cleanup_handler {
     $r->push_handlers('PerlCleanupHandler',
                       sub { $class->_exit_if_too_big(shift) });
     $r->pnotes(size_limit_cleanup => 1);
+}
+
+sub _exit_if_too_big {
+    my $class = shift;
+    my $r = shift;
+
+    return Apache::Constants::DECLINED()
+        if ($CHECK_EVERY_N_REQUESTS
+             && ($REQUEST_COUNT++ % $CHECK_EVERY_N_REQUESTS));
+
+    $START_TIME ||= time;
+
+    if ($class->_limits_are_exceeded()) {
+        my ($size, $share, $unshared) = $class->_check_size();
+
+        if (IS_WIN32 || $class->_platform_getppid() > 1) {
+            # this is a child httpd
+            my $e   = time - $START_TIME;
+            my $msg = "httpd process too big, exiting at SIZE=$size KB";
+            $msg .= " SHARE=$share KB UNSHARED=$unshared" if ($share);
+            $msg .= " REQUESTS=$REQUEST_COUNT  LIFETIME=$e seconds";
+            $class->_error_log($msg);
+
+            if (IS_WIN32) {
+                # child_terminate() is disabled in win32 Apache
+                CORE::exit(-2);
+            }
+            else {
+                $r->child_terminate();
+            }
+        }
+        else {
+            # this is the main httpd, whose parent is init?
+            my $msg = "main process too big, SIZE=$size KB ";
+            $msg .= " SHARE=$share KB" if ($share);
+            $class->_error_log($msg);
+        }
+    }
+    return Apache::Constants::OK();
 }
 
 1;

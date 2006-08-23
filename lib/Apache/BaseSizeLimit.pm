@@ -64,45 +64,6 @@ sub set_check_interval {
     $CHECK_EVERY_N_REQUESTS = shift;
 }
 
-sub _exit_if_too_big {
-    my $class = shift;
-    my $r = shift;
-
-    return DECLINED
-        if ($CHECK_EVERY_N_REQUESTS
-             && ($REQUEST_COUNT++ % $CHECK_EVERY_N_REQUESTS));
-
-    $START_TIME ||= time;
-
-    if ($class->_limits_are_exceeded()) {
-        my ($size, $share, $unshared) = $class->_check_size();
-
-        if (IS_WIN32 || $class->_platform_getppid() > 1) {
-            # this is a child httpd
-            my $e   = time - $START_TIME;
-            my $msg = "httpd process too big, exiting at SIZE=$size KB";
-            $msg .= " SHARE=$share KB UNSHARED=$unshared" if ($share);
-            $msg .= " REQUESTS=$REQUEST_COUNT  LIFETIME=$e seconds";
-            $class->_error_log($msg);
-
-            if (IS_WIN32) {
-                # child_terminate() is disabled in win32 Apache
-                CORE::exit(-2);
-            }
-            else {
-                $r->child_terminate();
-            }
-        }
-        else {
-            # this is the main httpd, whose parent is init?
-            my $msg = "main process too big, SIZE=$size KB ";
-            $msg .= " SHARE=$share KB" if ($share);
-            $class->_error_log($msg);
-        }
-    }
-    return OK;
-}
-
 # REVIEW - Why doesn't this use $r->warn or some other
 # Apache/Apache::Log API?
 sub _error_log {
