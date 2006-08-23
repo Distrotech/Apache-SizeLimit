@@ -2,6 +2,12 @@ NAME
     Apache::SizeLimit - Because size does matter.
 
 SYNOPSIS
+
+        NOTE SVN TRUNK IS CURRENTLY BROKEN
+        try 
+        http://svn.apache.org/repos/asf/perl/Apache-SizeLimit/stable
+        for now
+
         <Perl>
          Apache::SizeLimit->set_max_process_size(150_000);   # Max size in KB
          Apache::SizeLimit->set_min_shared_size(10_000);     # Min share in KB
