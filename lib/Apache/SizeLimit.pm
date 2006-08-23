@@ -64,20 +64,21 @@ sub _exit_if_too_big {
     my $r = shift;
 
     return Apache::Constants::DECLINED()
-        if ($CHECK_EVERY_N_REQUESTS
-             && ($REQUEST_COUNT++ % $CHECK_EVERY_N_REQUESTS));
+        if ($class->get_check_interval()
+             && ($class->get_and_pinc_request_count % $class->get_check_interval()));
 
-    $START_TIME ||= time;
+    $class->set_start_time();
 
     if ($class->_limits_are_exceeded()) {
         my ($size, $share, $unshared) = $class->_check_size();
 
         if (IS_WIN32 || $class->_platform_getppid() > 1) {
             # this is a child httpd
-            my $e   = time - $START_TIME;
+            my $e   = time() - $class->get_start_time();
             my $msg = "httpd process too big, exiting at SIZE=$size KB";
-            $msg .= " SHARE=$share KB UNSHARED=$unshared" if ($share);
-            $msg .= " REQUESTS=$REQUEST_COUNT  LIFETIME=$e seconds";
+            $msg .= " SHARE=$share KB UNSHARED=$unshared" if $share;
+            $msg .= " REQUESTS=" . $class->get_request_count();
+            $msg .= " LIFETIME=$e seconds";
             $class->_error_log($msg);
 
             if (IS_WIN32) {
@@ -95,6 +96,7 @@ sub _exit_if_too_big {
             $class->_error_log($msg);
         }
     }
+
     return Apache::Constants::OK();
 }
 
