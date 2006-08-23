@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package Apache::SizeLimit;
+package Apache::BaseLimit;
 
 use strict;
 
@@ -63,39 +63,6 @@ sub set_check_interval {
     my $class = shift;
 
     $CHECK_EVERY_N_REQUESTS = shift;
-}
-
-sub handler ($$) {
-    my $class = shift;
-    my $r = shift || Apache->request;
-
-    return DECLINED unless $r->is_main();
-
-    # we want to operate in a cleanup handler
-    if ( $r->current_callback eq 'PerlCleanupHandler' ) {
-        return $class->_exit_if_too_big($r);
-    }
-    else {
-        $class->add_cleanup_handler($r);
-    }
-
-    return DECLINED;
-}
-
-sub add_cleanup_handler {
-    my $class = shift;
-    my $r = shift || Apache->request;
-
-    return unless $r;
-    return if $r->pnotes('size_limit_cleanup');
-
-    # This used to use $r->post_connection but there's no good way to
-    # test it, since apparently it does not push a handler onto the
-    # PerlCleanupHandler phase. That means that there's no way to use
-    # $r->get_handlers() to check the results of calling this method.
-    $r->push_handlers( 'PerlCleanupHandler',
-                       sub { $class->_exit_if_too_big(shift) } );
-    $r->pnotes( size_limit_cleanup => 1 );
 }
 
 sub _exit_if_too_big {
