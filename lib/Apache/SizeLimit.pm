@@ -26,7 +26,13 @@ use vars qw($VERSION);
 
 $VERSION = '0.91-dev';
 
-use Apache::BaseSizeLimit;
+use Apache::BaseSizeLimit qw(
+                             $MAX_PROCESS_SIZE
+                             $MAX_UNSHARED_SIZE
+                             $MIN_SHARE_SIZE
+                             $CHECK_EVERY_N_REQUESTS
+                             $START_TIME
+                            );
 use vars qw(@ISA);
 @ISA = qw(Apache::BaseSizeLimit);
 

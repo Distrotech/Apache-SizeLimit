@@ -18,12 +18,32 @@ package Apache::BaseSizeLimit;
 use strict;
 
 use Config;
+use Exporter;
 
 use vars qw(
     $VERSION
     $REQUEST_COUNT
     $USE_SMAPS
+
+    $MAX_PROCESS_SIZE
+    $MAX_UNSHARED_SIZE
+    $MIN_SHARE_SIZE
+    $CHECK_EVERY_N_REQUESTS
+    $START_TIME
+
+    @ISA
+    @EXPORT_OK
 );
+
+@ISA = qw(Exporter);
+
+@EXPORT_OK = qw(
+                $MAX_PROCESS_SIZE
+                $MAX_UNSHARED_SIZE
+                $MIN_SHARE_SIZE
+                $CHECK_EVERY_N_REQUESTS
+                $START_TIME
+               );
 
 $VERSION = '0.91-dev';
 
@@ -31,28 +51,24 @@ $REQUEST_COUNT          = 1;
 
 use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 
-use vars qw($MAX_PROCESS_SIZE);
 sub set_max_process_size {
     my $class = shift;
 
     $MAX_PROCESS_SIZE = shift;
 }
 
-use vars qw($MAX_UNSHARED_SIZE);
 sub set_max_unshared_size {
     my $class = shift;
 
     $MAX_UNSHARED_SIZE = shift;
 }
 
-use vars qw($MIN_SHARE_SIZE);
 sub set_min_shared_size {
     my $class = shift;
 
     $MIN_SHARE_SIZE = shift;
 }
 
-use vars qw($CHECK_EVERY_N_REQUESTS);
 sub set_check_interval {
     my $class = shift;
 
@@ -62,7 +78,6 @@ sub set_check_interval {
 sub get_check_interval { return $CHECK_EVERY_N_REQUESTS; }
 
 
-use vars qw($START_TIME);
 sub set_start_time { $START_TIME ||= time(); }
 
 sub get_start_time { return $START_TIME; }
