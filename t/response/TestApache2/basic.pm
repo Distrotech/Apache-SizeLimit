@@ -5,7 +5,7 @@ use warnings;
 
 use Apache::Test qw(-withtestmore);
 
-use Apache::Constants qw(OK);
+use Apache2::Const -compile => qw(OK);
 use Apache2::SizeLimit;
 use Config;
 
@@ -98,7 +98,7 @@ sub handler {
             'there is stil one PerlCleanupHandler after add_cleanup_handler() a second time' );
     }
 
-    return OK;
+    return Apache2::Const::OK;
 }
 
 

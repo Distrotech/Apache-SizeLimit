@@ -1,11 +1,11 @@
-package TestApache::deprecated;
+package TestApache2::deprecated;
 
 use strict;
 use warnings;
 
 use Apache::Test qw(-withtestmore);
 
-use Apache::Constants qw(OK);
+use Apache2::Const -compile => qw(OK);
 use Apache2::SizeLimit;
 
 
@@ -35,7 +35,7 @@ sub handler {
         'there is one PerlCleanupHandler after calling deprecated functions' );
 
 
-    return OK;
+    return Apache2::Const::OK;
 }
 
 

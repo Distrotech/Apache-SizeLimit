@@ -1,9 +1,9 @@
-package TestApache::check_n_requests2;
+package TestApache2::check_n_requests2;
 
 use strict;
 use warnings;
 
-use Apache::Constants;
+use Apache2::Const -compile => qw(OK);
 use Apache::Log;
 
 use Apache::Test qw(-withtestmore);
@@ -43,7 +43,7 @@ sub handler {
        "we passed the limits and will _NOT_ kill the child"
       );
 
-    return Apache::Constants::OK;
+    return Apachei2::Const::OK;
 }
 
 1;
