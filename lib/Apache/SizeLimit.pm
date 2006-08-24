@@ -112,6 +112,37 @@ sub _exit_if_too_big {
     return Apache::Constants::OK();
 }
 
+{
+    # Deprecated APIs
+
+    sub setmax {
+
+        my $class = __PACKAGE__;
+
+        $class->set_max_process_size(shift);
+
+        $class->add_cleanup_handler();
+    }
+
+    sub setmin {
+
+        my $class = __PACKAGE__;
+
+        $class->set_min_shared_size(shift);
+
+        $class->add_cleanup_handler();
+    }
+
+    sub setmax_unshared {
+
+        my $class = __PACKAGE__;
+
+        $class->set_max_unshared_size(shift);
+
+        $class->add_cleanup_handler();
+    }
+}
+
 1;
 
 __END__
