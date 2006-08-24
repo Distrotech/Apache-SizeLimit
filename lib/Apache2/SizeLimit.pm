@@ -32,7 +32,13 @@ use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 # 2.x requires 5.6.x+ so 'our' is okay
 our $VERSION = '0.91-dev';
 
-use Apache::BaseSizeLimit;
+use Apache::BaseSizeLimit qw(
+                             $MAX_PROCESS_SIZE
+                             $MAX_UNSHARED_SIZE
+                             $MIN_SHARE_SIZE
+                             $CHECK_EVERY_N_REQUESTS
+                             $START_TIME
+                            );
 our @ISA = qw(Apache::BaseSizeLimit);
 
 __PACKAGE__->set_check_interval(1);
@@ -106,6 +112,37 @@ sub _exit_if_too_big {
     }
 
     return Apache2::Const::OK;
+}
+
+{
+    # Deprecated APIs
+
+    sub setmax {
+
+        my $class = __PACKAGE__;
+
+        $class->set_max_process_size(shift);
+
+        $class->add_cleanup_handler();
+    }
+
+    sub setmin {
+
+        my $class = __PACKAGE__;
+
+        $class->set_min_shared_size(shift);
+
+        $class->add_cleanup_handler();
+    }
+
+    sub setmax_unshared {
+
+        my $class = __PACKAGE__;
+
+        $class->set_max_unshared_size(shift);
+
+        $class->add_cleanup_handler();
+    }
 }
 
 1;
@@ -304,7 +341,7 @@ The following example shows the effect of copy-on-write:
     require Apache2::SizeLimit;
     package X;
     use strict;
-    use Apache::Constants qw(OK);
+    use Apache2::Const -compile => qw(OK);
 
     my $x = "a" x (1024*1024);
 
