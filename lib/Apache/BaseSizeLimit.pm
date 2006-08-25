@@ -92,7 +92,7 @@ sub _error_log {
     my $class = shift;
 
     print STDERR "[", scalar( localtime(time) ),
-        "] ($$) Apache::SizeLimit @_\n";
+        "] ($$) " . ref($class) . " @_\n";
 }
 
 sub _limits_are_exceeded {
