@@ -3,10 +3,12 @@ NAME
 
 SYNOPSIS
 
-        NOTE SVN TRUNK IS CURRENTLY BROKEN
+        NOTE SVN TRUNK IS CURRENTLY BROKEN on 2.x
         try 
         http://svn.apache.org/repos/asf/perl/Apache-SizeLimit/stable
         for now
+
+        1.x should work, but has not been throughly tested -- use at your own risk.
 
         <Perl>
          Apache::SizeLimit->set_max_process_size(150_000);   # Max size in KB
