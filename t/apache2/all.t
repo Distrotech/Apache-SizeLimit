@@ -29,7 +29,7 @@ sub my_need {
     $ok &= need_min_apache_version("2.0.48");
 
     eval { require mod_perl2; };
-    $ok &= $mod_perl2::VERSION >= 1.99022 ? 1 : 0; ## 2.0.0-RC5+
+    $ok &= $mod_perl2::VERSION && $mod_perl2::VERSION >= 1.99022 ? 1 : 0; ## 2.0.0-RC5+
 
     $ok &= need_min_module_version('Test::Builder' => '0.18_01');
 
