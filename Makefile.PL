@@ -150,17 +150,11 @@ sub wanted_mp_generation {
     # check if we have a command line specification
     # flag: 0: unknown, 1: mp1, 2: mp2
     my $flag = 0;
-    my @pass;
-    while (@ARGV) {
-        my $key = shift @ARGV;
+    foreach my $key (@ARGV) {
         if ($key =~ /^MOD_PERL=(\d)$/) {
             $flag = $1;
         }
-        else {
-            push @pass, $key;
-        }
     }
-    @ARGV = @pass;
 
     # check %ENV
     my $env = exists $ENV{MOD_PERL} ? $ENV{MOD_PERL} : 0;
@@ -183,7 +177,7 @@ EOF
         # if still unknown try to require mod_perl.pm
         eval { require mod_perl };
         if ($@) {
-            # if we don't have mp2, check for mp2
+            # if we don't have mp1, check for mp2
             eval { require mod_perl2 } if ($@);
             unless ($@) {
                 $wanted = 2;
