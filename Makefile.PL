@@ -28,10 +28,7 @@ unless ( $ARGV[0] eq '--dist' ) {
 my $HAS_APACHE_TEST = check_for_apache_test();
 
 my %common_opts = (
-                   VERSION_FROM    => "lib/Apache/SizeLimit.pm",
-                   NAME            => "Apache::SizeLimit",
                    PREREQ_PM       => \%prereqs,
-                   ABSTRACT_FROM   => 'lib/Apache/SizeLimit.pm',
                    clean           => { FILES => 't/TEST' },
                   );
 
@@ -39,6 +36,9 @@ if ($mp_gen == 1) {
     require ExtUtils::MakeMaker;
     ExtUtils::MakeMaker::WriteMakefile(
                                        %common_opts,
+                                       VERSION_FROM    => "lib/Apache/SizeLimit.pm",
+                                       NAME            => "Apache::SizeLimit",
+                                       ABSTRACT_FROM   => 'lib/Apache/SizeLimit.pm',
                                       );
 
 }
@@ -46,6 +46,9 @@ else {
     require ModPerl::MM;
     ModPerl::MM::WriteMakefile(
                                %common_opts,
+                               VERSION_FROM    => "lib/Apache2/SizeLimit.pm",
+                               NAME            => "Apache2::SizeLimit",
+                               ABSTRACT_FROM   => 'lib/Apache2/SizeLimit.pm',
                               );
 }
 
