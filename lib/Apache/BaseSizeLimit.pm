@@ -126,8 +126,6 @@ sub _load {
 }
 
 BEGIN {
-    eval { require mod_perl2 };
-
     if ($Config{'osname'} eq 'solaris' && $Config{'osvers'} >= 2.6 ) {
         *_platform_check_size   = \&_solaris_2_6_size_check;
         *_platform_getppid = \&_perl_getppid;
@@ -153,12 +151,12 @@ BEGIN {
         *_platform_check_size   = \&_bsd_size_check;
         *_platform_getppid = \&_perl_getppid;
     }
-    elsif (IS_WIN32i && $mod_perl::VERSION < 1.99) {
-        _load('Win32::API');
-
-        *_platform_check_size   = \&_win32_size_check;
-        *_platform_getppid = \&_perl_getppid;
-    }
+#    elsif (IS_WIN32i && $mod_perl::VERSION < 1.99) {
+#        _load('Win32::API');
+#
+#        *_platform_check_size   = \&_win32_size_check;
+#        *_platform_getppid = \&_perl_getppid;
+#    }
     else {
         die "Apache::SizeLimit is not implemented on your platform.";
     }
