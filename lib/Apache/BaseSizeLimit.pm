@@ -21,19 +21,19 @@ use Config;
 use Exporter;
 
 use vars qw(
-    $VERSION
-    $REQUEST_COUNT
-    $USE_SMAPS
+            $VERSION
+            $REQUEST_COUNT
+            $USE_SMAPS
 
-    $MAX_PROCESS_SIZE
-    $MAX_UNSHARED_SIZE
-    $MIN_SHARE_SIZE
-    $CHECK_EVERY_N_REQUESTS
-    $START_TIME
+            $MAX_PROCESS_SIZE
+            $MAX_UNSHARED_SIZE
+            $MIN_SHARE_SIZE
+            $CHECK_EVERY_N_REQUESTS
+            $START_TIME
 
-    @ISA
-    @EXPORT_OK
-);
+            @ISA
+            @EXPORT_OK
+           );
 
 @ISA = qw(Exporter);
 
@@ -76,7 +76,6 @@ sub set_check_interval {
 }
 
 sub get_check_interval { return $CHECK_EVERY_N_REQUESTS; }
-
 
 sub set_start_time { $START_TIME ||= time(); }
 
