@@ -1,4 +1,4 @@
-package TestApache::check_n_requests;
+package TestApache::zzz_check_n_requests;
 
 use strict;
 use warnings;
