@@ -91,7 +91,7 @@ sub _error_log {
     my $class = shift;
 
     print STDERR "[", scalar( localtime(time) ),
-        "] ($$) " . ref($class) . " @_\n";
+        "] ($$) $class @_\n";
 }
 
 sub _limits_are_exceeded {
