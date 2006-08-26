@@ -33,9 +33,11 @@ sub handler {
 
 __DATA__
 <NoAutoConfig>
-    <Location /TestApache2__deprecated>
-        PerlOptions +GlobalRequest
-        SetHandler modperl
-        PerlResponseHandler TestApache2::deprecated
-    </Location>
+    <IfDefine !APACHE1>
+        <Location /TestApache2__deprecated>
+            PerlOptions +GlobalRequest
+            SetHandler modperl
+            PerlResponseHandler TestApache2::deprecated
+        </Location>
+    </IfDefine>
 </NoAutoConfig>
