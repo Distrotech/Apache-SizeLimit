@@ -18,6 +18,8 @@ package Apache2::SizeLimit;
 use strict;
 use Config;
 
+use APR::Pool ();
+
 use Apache2::RequestUtil ();
 use Apache2::MPM ();
 use Apache2::Const -compile => qw (DECLINED OK);
@@ -71,10 +73,8 @@ sub add_cleanup_handler {
     # test it, since apparently it does not push a handler onto the
     # PerlCleanupHandler phase. That means that there's no way to use
     # $r->get_handlers() to check the results of calling this method.
-    $r->push_handlers(
-                      'PerlCleanupHandler',
-                      sub { $class->_exit_if_too_big(shift) }
-                     );
+		# $r->get_handlers() SEGFAULTS at the moment in 2.x
+		$r->pool->cleanup_register(\&exit_if_too_big, $r);
 
     $r->pnotes(size_limit_cleanup => 1);
 }

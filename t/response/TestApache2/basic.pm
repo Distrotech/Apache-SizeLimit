@@ -15,7 +15,7 @@ use constant TEN_MB => 1024 * 10;
 sub handler {
     my $r = shift;
 
-    plan $r, tests => 12;
+    plan $r, tests => 9;
 
     ok( ! Apache2::SizeLimit->_limits_are_exceeded(),
         'check that _limits_are_exceeded() returns false without any limits set' );
@@ -74,28 +74,6 @@ sub handler {
         Apache2::SizeLimit->set_check_interval(10);
         is( $Apache2::SizeLimit::CHECK_EVERY_N_REQUESTS, 10,
             'set_check_interval set global' );
-    }
-
-    {
-        Apache2::SizeLimit->set_max_process_size(0);
-        Apache2::SizeLimit->set_min_shared_size(0);
-        Apache2::SizeLimit->set_max_unshared_size(0);
-
-        my $handlers = $r->get_handlers('PerlCleanupHandler');
-        is( scalar @$handlers, 0,
-            'there is no PerlCleanupHandler before add_cleanup_handler()' );
-
-        Apache2::SizeLimit->add_cleanup_handler($r);
-
-        $handlers = $r->get_handlers('PerlCleanupHandler');
-        is( scalar @$handlers, 1,
-            'there is one PerlCleanupHandler after add_cleanup_handler()' );
-
-        Apache2::SizeLimit->add_cleanup_handler($r);
-
-        $handlers = $r->get_handlers('PerlCleanupHandler');
-        is( scalar @$handlers, 1,
-            'there is stil one PerlCleanupHandler after add_cleanup_handler() a second time' );
     }
 
     return Apache2::Const::OK;
