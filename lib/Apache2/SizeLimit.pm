@@ -32,14 +32,14 @@ use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 # 2.x requires 5.6.x+ so 'our' is okay
 our $VERSION = '0.91-dev';
 
-use Apache::BaseSizeLimit qw(
+use Apache::SizeLimit::Core qw(
                              $MAX_PROCESS_SIZE
                              $MAX_UNSHARED_SIZE
                              $MIN_SHARE_SIZE
                              $CHECK_EVERY_N_REQUESTS
                              $START_TIME
                             );
-our @ISA = qw(Apache::BaseSizeLimit);
+our @ISA = qw(Apache::SizeLimit::Core);
 
 __PACKAGE__->set_check_interval(1);
 

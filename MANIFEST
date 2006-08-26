@@ -6,7 +6,7 @@ MANIFEST.SKIP
 Makefile.PL
 README
 lib/Apache/SizeLimit.pm
-lib/Apache/BaseSizeLimit.pm
+lib/Apache/SizeLimit/Core.pm
 lib/Apache2/SizeLimit.pm
 t/pod.t
 t/response/TestApache/basic.pm

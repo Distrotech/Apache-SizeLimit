@@ -26,7 +26,7 @@ use vars qw($VERSION);
 
 $VERSION = '0.91-dev';
 
-use Apache::BaseSizeLimit qw(
+use Apache::SizeLimit::Core qw(
                              $MAX_PROCESS_SIZE
                              $MAX_UNSHARED_SIZE
                              $MIN_SHARE_SIZE
@@ -34,7 +34,7 @@ use Apache::BaseSizeLimit qw(
                              $START_TIME
                             );
 use vars qw(@ISA);
-@ISA = qw(Apache::BaseSizeLimit);
+@ISA = qw(Apache::SizeLimit::Core);
 
 __PACKAGE__->set_check_interval(1);
 

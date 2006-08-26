@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package Apache::BaseSizeLimit;
+package Apache::SizeLimit::Core;
 
 use strict;
 
@@ -265,7 +265,7 @@ __END__
 
 =head1 NAME
 
-Apache::BaseLimit - Because size does matter.
+Apache::SizeLimit::Core - Because size does matter.
 
 =head1 SYNOPSIS
 
