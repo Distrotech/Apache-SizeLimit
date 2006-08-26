@@ -3,12 +3,12 @@ NAME
 
 SYNOPSIS
 
-        NOTE SVN TRUNK IS CURRENTLY BROKEN on 2.x
-        try 
-        http://svn.apache.org/repos/asf/perl/Apache-SizeLimit/stable
-        for now
+        SVN trunk should now be functional in both mp1 and mp2 series.
+        HOWEVER, it has not yet been well tested.
 
-        1.x should work, but has not been throughly tested -- use at your own risk.
+        Please See: 
+        http://svn.apache.org/repos/asf/perl/Apache-SizeLimit/stable
+        for now.
 
         <Perl>
          Apache::SizeLimit->set_max_process_size(150_000);   # Max size in KB
