@@ -74,7 +74,7 @@ sub add_cleanup_handler {
     # PerlCleanupHandler phase. That means that there's no way to use
     # $r->get_handlers() to check the results of calling this method.
 		# $r->get_handlers() SEGFAULTS at the moment in 2.x
-		$r->pool->cleanup_register(\&exit_if_too_big, $r);
+		$r->pool->cleanup_register(\&_exit_if_too_big, $r);
 
     $r->pnotes(size_limit_cleanup => 1);
 }
