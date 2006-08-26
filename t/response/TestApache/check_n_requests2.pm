@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use Apache::Constants;
-use Apache::Log;
 
 use Apache::Test qw(-withtestmore);
 
