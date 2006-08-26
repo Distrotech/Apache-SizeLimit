@@ -35,7 +35,7 @@ __DATA__
 <NoAutoConfig>
     <Location /TestApache2__deprecated>
         PerlOptions +GlobalRequest
-		    SetHandler modperl
-				PerlResponseHandler TestApache2::deprecated
-	  </Location>
+        SetHandler modperl
+        PerlResponseHandler TestApache2::deprecated
+    </Location>
 </NoAutoConfig>
