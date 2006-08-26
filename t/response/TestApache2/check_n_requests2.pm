@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use Apache2::Const -compile => qw(OK);
-use Apache::Log;
 
 use Apache::Test qw(-withtestmore);
 
@@ -43,7 +42,7 @@ sub handler {
        "we passed the limits and will _NOT_ kill the child"
       );
 
-    return Apachei2::Const::OK;
+    return Apache2::Const::OK;
 }
 
 1;

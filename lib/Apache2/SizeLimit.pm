@@ -73,8 +73,8 @@ sub add_cleanup_handler {
     # test it, since apparently it does not push a handler onto the
     # PerlCleanupHandler phase. That means that there's no way to use
     # $r->get_handlers() to check the results of calling this method.
-		# $r->get_handlers() SEGFAULTS at the moment in 2.x
-		$r->pool->cleanup_register(\&_exit_if_too_big, $r);
+    # $r->get_handlers() SEGFAULTS at the moment in 2.x
+    $r->pool->cleanup_register(sub { $class->_exit_if_too_big(shift) }, $r);
 
     $r->pnotes(size_limit_cleanup => 1);
 }
@@ -116,7 +116,10 @@ sub _exit_if_too_big {
 
 {
     # Deprecated APIs
-
+    # If you use these, you must set
+    # PerlOptions +GlobalRequest -- we have no $r otherwise
+	# This is differs a from the mp1 series
+	
     sub setmax {
 
         my $class = __PACKAGE__;
@@ -485,7 +488,9 @@ It also documented three functions for use from registry scripts:
 =back
 
 Besides setting the appropriate limit, these functions I<also> add a
-cleanup handler to the current request.
+cleanup handler to the current request.  In the 2.x series of mod_perl
+to use the deprecated functions, you must set PerlOptions +GlobalRequest
+accordingly.
 
 =head1 SUPPORT
 

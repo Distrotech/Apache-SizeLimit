@@ -29,5 +29,13 @@ sub handler {
     return Apache2::Const::OK;
 }
 
-
 1;
+
+__DATA__
+<NoAutoConfig>
+    <Location /TestApache2__deprecated>
+        PerlOptions +GlobalRequest
+		    SetHandler modperl
+				PerlResponseHandler TestApache2::deprecated
+	  </Location>
+</NoAutoConfig>
