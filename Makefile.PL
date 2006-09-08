@@ -6,11 +6,18 @@ my %prereqs = ();
 my %mp2 = ( mod_perl2 => 1.99022 );
 my %mp1 = ( mod_perl  => 0 );
 
+my $mp_gen;
+if ($ENV{MOD_PERL_2_BUILD}) {
+    push @ARGV, "-apxs $ENV{MP_APXS}";
+    my $mp_gen = satisfy_mp_generation(2);
+}
+else {
+    $mp_gen = satisfy_mp_generation();
+}
 
-my $mp_gen = satisfy_mp_generation();
 %prereqs = ($mp_gen == 1 ? %mp1 : %mp2);
 
-unless ( $ARGV[0] eq '--dist' ) {
+unless ( $ARGV[0] eq '--dist' || $ENV{MOD_PERL_2_BUILD} ) {
     if ( $Config{'osname'} eq 'linux' ) {
         $prereqs{'Linux::Pid'} = 0;
         if ( -e '/proc/self/smaps' ) {
@@ -52,6 +59,9 @@ else {
                               );
 }
 
+if ($ENV{MOD_PERL_2_BUILD}) {
+    pop @ARGV;
+}
 
 sub check_for_apache_test {
     return unless eval {
