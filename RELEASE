@@ -46,8 +46,11 @@ TODO:
    configurations as possible on as many platforms as possible.
 
   a. edit ./Changes:
-     - change -dev to -rc\d+ starting with -rc1
-     - don't commit this (see dev@ archives)
+     - find lib -type f -name "*.pm" | \
+         xargs perl -pi -e 's,0.91-dev,0.91-rc1,g'
+     - perl -pi -e 's,0.91-dev,0.91-rc1,g' Changes
+
+     - don't commit these (see dev@ archives)
 
   b. nuke any preinstalled Apache-SizeLimit libs and run 'make test'
 
