@@ -8,6 +8,16 @@ Changes - Apache::SizeLimit change logfile
 
 =item 0.91-dev
 
+  *********** HEADS UP - SHARED CODE BASE - HEADS UP  ***********
+  Apache-SizeLimit has been hybrized.  
+  It has been split into 3 packages.  
+    1) Apache::SizeLimit  - User API for httpd 1.3.x / mod_perl 1.x
+    2) Apache2::SizeLimit - User API for httpd 2.x / mod_perl 2.x
+
+    3) Apache::SizeLimit::Core - Interal Shared Functionality
+         _NEVER_ use this module directly.
+[Philip M. Gollucci <pgollucci@p6m7g8.com>]
+
 Fix Can't call method "child_terminate" on an undefined value
 By add_cleanup_handler() pass $r to _exit_if_to_big() via shift
 [David Wheeler <david@kineticode.com>]
