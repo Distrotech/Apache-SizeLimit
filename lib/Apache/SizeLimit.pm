@@ -167,8 +167,12 @@ Apache::SizeLimit - Because size does matter.
 
 ******************************** NOIICE *******************
 
-    This version is only for httpd 1.x and mod_perl 1.x
-    series.
+   This version is only for httpd 1.3.x and mod_perl 1.x
+   series.
+
+   For httpd 2.x / mod_perl 2.x Apache2::SizeLimit 
+   documentation please read the perldoc in 
+   lib/Apache2/SizeLimit.pm
 
 ******************************** NOTICE *******************
 
