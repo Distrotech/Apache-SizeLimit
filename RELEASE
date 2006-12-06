@@ -37,6 +37,10 @@ TODO:
      Decide what to do about having almost identical pod in Apache::SizeLimit
      and Apache2::SizeLimit
 
+3/4. Configure 
+
+     MAINTAINER_BUILDING_RELEASE=1 perl Makefile.PL
+
 1. 'make dist' - to make sure nothing is missing from the manifest,
    etc. Now test this generated package (not svn) with as many
    configurations as possible on as many platforms as possible.

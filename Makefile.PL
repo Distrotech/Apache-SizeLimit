@@ -39,7 +39,13 @@ my %common_opts = (
                    clean           => { FILES => 't/TEST' },
                   );
 
-if ($mp_gen == 1) {
+### MAINTAINER_BUILDING_RELEASE is hack
+### for the Release Manager's use only.
+### We will set it so that the resulting
+### distribution will be called Apache-SizeLimit-\d+.tar.gz
+### and NOT Apache2-SizeLimit-\d+.tar.gz
+### This is for historical reasons and consistency
+if ($mp_gen == 1 || $ENV{MAINTAINER_BUILDING_RELEASE}) {
     require ExtUtils::MakeMaker;
     ExtUtils::MakeMaker::WriteMakefile(
                                        %common_opts,
