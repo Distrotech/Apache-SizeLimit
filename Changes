@@ -18,6 +18,10 @@ Changes - Apache::SizeLimit change logfile
          _NEVER_ use this module directly.
 [Philip M. Gollucci <pgollucci@p6m7g8.com>]
 
+Skip tests on OS X (darwin) due to broken getrusage(3)
+[Fred Moyer <fred@redhotpenguin.com>, 
+ Philip M. Gollucci <pgollucci@p6m7g8.com>]
+
 Fix Can't call method "child_terminate" on an undefined value
 By add_cleanup_handler() pass $r to _exit_if_to_big() via shift
 [David Wheeler <david@kineticode.com>]
