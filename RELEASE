@@ -61,7 +61,7 @@ TODO:
      % APACHE_TEST_PRETEND_NO_LWP=1 make test
 
 2. once confident that the package is good, upload a release candidate
-   to perl.apache.org/~username and post 24 hour-ish candidate alert
+   to people.apache.org/~username and post 24 hour-ish candidate alert
    to the various lists
 
      o dev/perl.apache.org
