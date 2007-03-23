@@ -12,5 +12,6 @@ require Apache::TestUtil;
 
 Apache::TestUtil::t_start_error_log_watch();
 my $res = GET $url;
+sleep(5);
 my $c = grep { /Apache::SizeLimit httpd process too big/ } Apache::TestUtil::t_finish_error_log_watch();
 ok $c == 1;
