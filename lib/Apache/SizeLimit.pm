@@ -1,9 +1,9 @@
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
+# Copyright 2001-2006 The Apache Software Foundation or its licensors, as
+# applicable.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
@@ -15,44 +15,69 @@
 
 package Apache::SizeLimit;
 
-use strict;
+use Apache::Constants qw(DECLINED OK);
 use Config;
+use strict;
+use vars qw(
+    $VERSION
+    $REQUEST_COUNT
+    $START_TIME
+    $USE_SMAPS
+);
 
-use Apache::Constants ();
+$VERSION = '0.9';
+
+__PACKAGE__->set_check_interval(1);
+
+$REQUEST_COUNT          = 1;
+$USE_SMAPS              = 1;
 
 use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 
-use vars qw($VERSION);
 
-$VERSION = '0.91-dev';
+use vars qw( $MAX_PROCESS_SIZE );
+sub set_max_process_size {
+    my $class = shift;
 
-use Apache::SizeLimit::Core qw(
-                             $MAX_PROCESS_SIZE
-                             $MAX_UNSHARED_SIZE
-                             $MIN_SHARE_SIZE
-                             $CHECK_EVERY_N_REQUESTS
-                             $START_TIME
-                            );
-use vars qw(@ISA);
-@ISA = qw(Apache::SizeLimit::Core);
+    $MAX_PROCESS_SIZE = shift;
+}
 
-__PACKAGE__->set_check_interval(1);
+use vars qw( $MAX_UNSHARED_SIZE );
+sub set_max_unshared_size {
+    my $class = shift;
+
+    $MAX_UNSHARED_SIZE = shift;
+}
+
+use vars qw( $MIN_SHARE_SIZE );
+sub set_min_shared_size {
+    my $class = shift;
+
+    $MIN_SHARE_SIZE = shift;
+}
+
+use vars qw( $CHECK_EVERY_N_REQUESTS );
+sub set_check_interval {
+    my $class = shift;
+
+    $CHECK_EVERY_N_REQUESTS = shift;
+}
 
 sub handler ($$) {
     my $class = shift;
     my $r = shift || Apache->request;
 
-    return Apache::Constants::DECLINED() unless $r->is_main();
+    return DECLINED unless $r->is_main();
 
     # we want to operate in a cleanup handler
-    if ($r->current_callback eq 'PerlCleanupHandler') {
+    if ( $r->current_callback eq 'PerlCleanupHandler' ) {
         return $class->_exit_if_too_big($r);
     }
     else {
         $class->add_cleanup_handler($r);
     }
 
-    return Apache::Constants::DECLINED();
+    return DECLINED;
 }
 
 sub add_cleanup_handler {
@@ -66,33 +91,30 @@ sub add_cleanup_handler {
     # test it, since apparently it does not push a handler onto the
     # PerlCleanupHandler phase. That means that there's no way to use
     # $r->get_handlers() to check the results of calling this method.
-    $r->push_handlers(
-                      'PerlCleanupHandler',
-                      sub { $class->_exit_if_too_big(shift) }
-                     );
-    $r->pnotes(size_limit_cleanup => 1);
+    $r->push_handlers( 'PerlCleanupHandler',
+                       sub { $class->_exit_if_too_big() } );
+    $r->pnotes( size_limit_cleanup => 1 );
 }
 
 sub _exit_if_too_big {
     my $class = shift;
     my $r = shift;
 
-    return Apache::Constants::DECLINED()
-        if ($class->get_check_interval()
-             && ($class->get_and_pinc_request_count % $class->get_check_interval()));
+    return DECLINED
+        if ( $CHECK_EVERY_N_REQUESTS
+             && ( $REQUEST_COUNT++ % $CHECK_EVERY_N_REQUESTS ) );
 
-    $class->set_start_time();
+    $START_TIME ||= time;
 
-    if ($class->_limits_are_exceeded()) {
-        my ($size, $share, $unshared) = $class->_check_size();
+    if ( $class->_limits_are_exceeded() ) {
+        my ( $size, $share, $unshared ) = $class->_check_size();
 
-        if (IS_WIN32 || $class->_platform_getppid() > 1) {
+        if ( IS_WIN32 || $class->_platform_getppid() > 1 ) {
             # this is a child httpd
-            my $e   = time() - $class->get_start_time();
+            my $e   = time - $START_TIME;
             my $msg = "httpd process too big, exiting at SIZE=$size KB";
-            $msg .= " SHARE=$share KB UNSHARED=$unshared" if $share;
-            $msg .= " REQUESTS=" . $class->get_request_count();
-            $msg .= " LIFETIME=$e seconds";
+            $msg .= " SHARE=$share KB UNSHARED=$unshared" if ($share);
+            $msg .= " REQUESTS=$REQUEST_COUNT  LIFETIME=$e seconds";
             $class->_error_log($msg);
 
             if (IS_WIN32) {
@@ -110,15 +132,184 @@ sub _exit_if_too_big {
             $class->_error_log($msg);
         }
     }
-
-    return Apache::Constants::OK();
+    return OK;
 }
+
+# REVIEW - Why doesn't this use $r->warn or some other
+# Apache/Apache::Log API?
+sub _error_log {
+    my $class = shift;
+
+    print STDERR "[", scalar( localtime(time) ),
+        "] ($$) Apache::SizeLimit @_\n";
+}
+
+sub _limits_are_exceeded {
+    my $class = shift;
+
+    my ( $size, $share, $unshared ) = $class->_check_size();
+
+    return 1 if $MAX_PROCESS_SIZE  && $size > $MAX_PROCESS_SIZE;
+
+    return 0 unless $share;
+
+    return 1 if $MIN_SHARE_SIZE    && $share < $MIN_SHARE_SIZE;
+
+    return 1 if $MAX_UNSHARED_SIZE && $unshared > $MAX_UNSHARED_SIZE;
+
+    return 0;
+}
+
+sub _check_size {
+    my ( $size, $share ) = _platform_check_size();
+
+    return ( $size, $share, $size - $share );
+}
+
+sub _load {
+    my $mod  = shift;
+
+    eval "require $mod"
+        or die "You must install $mod for Apache::SizeLimit to work on your platform.";
+}
+
+BEGIN {
+    if (   $Config{'osname'} eq 'solaris'
+        && $Config{'osvers'} >= 2.6 ) {
+        *_platform_check_size   = \&_solaris_2_6_size_check;
+        *_platform_getppid = \&_perl_getppid;
+    }
+    elsif ( $Config{'osname'} eq 'linux' ) {
+        _load('Linux::Pid');
+
+        *_platform_getppid = \&_linux_getppid;
+
+        if ( eval { require Linux::Smaps } && Linux::Smaps->new($$) ) {
+            *_platform_check_size = \&_linux_smaps_size_check;
+        }
+        else {
+            $USE_SMAPS = 0;
+            *_platform_check_size = \&_linux_size_check;
+        }
+    }
+    elsif ( $Config{'osname'} =~ /(?:bsd|aix)/i ) {
+        # on OSX, getrusage() is returning 0 for proc & shared size.
+        _load('BSD::Resource');
+
+        *_platform_check_size   = \&_bsd_size_check;
+        *_platform_getppid = \&_perl_getppid;
+    }
+    elsif (IS_WIN32) {
+        _load('Win32::API');
+
+        *_platform_check_size   = \&_win32_size_check;
+        *_platform_getppid = \&_perl_getppid;
+    }
+    else {
+        die "Apache::SizeLimit is not implemented on your platform.";
+    }
+}
+
+sub _linux_smaps_size_check {
+    my $class = shift;
+
+    return $class->_linux_size_check() unless $USE_SMAPS;
+
+    my $s = Linux::Smaps->new($$)->all;
+    return ($s->size, $s->shared_clean + $s->shared_dirty);
+}
+
+sub _linux_size_check {
+    my $class = shift;
+
+    my ( $size, $share ) = ( 0, 0 );
+
+    if ( open my $fh, '<', '/proc/self/statm' ) {
+        ( $size, $share ) = ( split /\s/, scalar <$fh> )[0,2];
+        close $fh;
+    }
+    else {
+        $class->_error_log("Fatal Error: couldn't access /proc/self/status");
+    }
+
+    # linux on intel x86 has 4KB page size...
+    return ( $size * 4, $share * 4 );
+}
+
+sub _solaris_2_6_size_check {
+    my $class = shift;
+
+    my $size = -s "/proc/self/as"
+        or $class->_error_log("Fatal Error: /proc/self/as doesn't exist or is empty");
+    $size = int( $size / 1024 );
+
+    # return 0 for share, to avoid undef warnings
+    return ( $size, 0 );
+}
+
+# rss is in KB but ixrss is in BYTES.
+# This is true on at least FreeBSD, OpenBSD, & NetBSD - Phil Gollucci
+sub _bsd_size_check {
+    my @results = BSD::Resource::getrusage();
+    my $max_rss   = $results[2];
+    my $max_ixrss = int ( $results[3] / 1024 );
+
+    return ( $max_rss, $max_ixrss );
+}
+
+sub _win32_size_check {
+    my $class = shift;
+
+    # get handle on current process
+    my $get_current_process = Win32::API->new(
+        'kernel32',
+        'get_current_process',
+        [],
+        'I'
+    );
+    my $proc = $get_current_process->Call();
+
+    # memory usage is bundled up in ProcessMemoryCounters structure
+    # populated by GetProcessMemoryInfo() win32 call
+    my $DWORD  = 'B32';    # 32 bits
+    my $SIZE_T = 'I';      # unsigned integer
+
+    # build a buffer structure to populate
+    my $pmem_struct = "$DWORD" x 2 . "$SIZE_T" x 8;
+    my $mem_counters
+        = pack( $pmem_struct, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 );
+
+    # GetProcessMemoryInfo is in "psapi.dll"
+    my $get_process_memory_info = new Win32::API(
+        'psapi',
+        'GetProcessMemoryInfo',
+        [ 'I', 'P', 'I' ],
+        'I'
+    );
+
+    my $bool = $get_process_memory_info->Call(
+        $proc,
+        $mem_counters,
+        length $mem_counters,
+    );
+
+    # unpack ProcessMemoryCounters structure
+    my $peak_working_set_size =
+        ( unpack( $pmem_struct, $mem_counters ) )[2];
+
+    # only care about peak working set size
+    my $size = int( $peak_working_set_size / 1024 );
+
+    return ( $size, 0 );
+}
+
+sub _perl_getppid { return getppid }
+sub _linux_getppid { return Linux::Pid::getppid() }
 
 {
     # Deprecated APIs
 
     sub setmax {
-
         my $class = __PACKAGE__;
 
         $class->set_max_process_size(shift);
@@ -127,7 +318,6 @@ sub _exit_if_too_big {
     }
 
     sub setmin {
-
         my $class = __PACKAGE__;
 
         $class->set_min_shared_size(shift);
@@ -136,7 +326,6 @@ sub _exit_if_too_big {
     }
 
     sub setmax_unshared {
-
         my $class = __PACKAGE__;
 
         $class->set_max_unshared_size(shift);
@@ -145,7 +334,9 @@ sub _exit_if_too_big {
     }
 }
 
+
 1;
+
 
 __END__
 
@@ -167,13 +358,14 @@ Apache::SizeLimit - Because size does matter.
 
 ******************************** NOIICE *******************
 
-   This version is only for httpd 1.3.x and mod_perl 1.x
-   series.
+    This version is only for httpd 1.x and mod_perl 1.x 
+    series.
 
-   For httpd 2.x / mod_perl 2.x Apache2::SizeLimit 
-   documentation please read the perldoc in 
-   lib/Apache2/SizeLimit.pm
+    Future versions of this module may support both.
 
+    Currently, Apache2::SizeLimit is bundled with 
+    mod_perl 2.x for that series.
+    
 ******************************** NOTICE *******************
 
 This module allows you to kill off Apache httpd processes if they grow
@@ -491,28 +683,14 @@ It also documented three functions for use from registry scripts:
 Besides setting the appropriate limit, these functions I<also> add a
 cleanup handler to the current request.
 
-=head1 SUPPORT
-
-The Apache-SizeLimit project is co-maintained by several developers,
-who take turns at making CPAN releases. Therefore you may find several
-CPAN directories containing Apache-SizeLimit releases. The best way to
-find the latest release is to use http://search.cpan.org/.
-
-If you have a question or you want to submit a bug report or make a
-contribution, please do not email individual authors, but send an
-email to the modperl <at> perl.apache.org mailing list. This list is
-moderated, so unless you are subscribed to it, your message will have
-to be approved first by a moderator. Therefore please allow some time
-(up to a few days) for your post to propagate to the list.
-
 =head1 AUTHOR
 
 Doug Bagley <doug+modperl@bagley.org>, channeling Procrustes.
 
 Brian Moseley <ix@maz.org>: Solaris 2.6 support
 
-Doug Steinwand and Perrin Harkins <perrin@elem.com>: added support for
-shared memory and additional diagnostic info
+Doug Steinwand and Perrin Harkins <perrin@elem.com>: added support 
+    for shared memory and additional diagnostic info
 
 Matt Phillips <mphillips@virage.com> and Mohamed Hendawi
 <mhendawi@virage.com>: Win32 support

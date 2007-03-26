@@ -25,11 +25,6 @@ sub my_need {
     elsif ( $Config{'osname'} eq 'MSWin32' ) {
         $ok &= need_module('Win32::API');
     }
-    elsif ( $Config{'osname'} eq 'darwin' ) {
-        push @Apache::Test::SkipReasons,
-            "$Config{osname} is not supported - broken getrusage(3)";
-        return 0;
-    }
 
     $ok &= need_module('mod_perl.c');
 
