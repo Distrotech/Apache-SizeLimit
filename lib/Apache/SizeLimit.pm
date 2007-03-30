@@ -25,7 +25,7 @@ use vars qw(
     $USE_SMAPS
 );
 
-$VERSION = '0.91-dev';
+$VERSION = '0.91';
 
 __PACKAGE__->set_check_interval(1);
 
