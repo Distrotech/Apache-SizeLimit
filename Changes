@@ -6,6 +6,8 @@ Changes - Apache::SizeLimit change logfile
 
 =over 6
 
+=item 0.92-dev
+
 =item 0.91 2007-03-29
 
 Fix Can't call method "child_terminate" on an undefined value
