@@ -6,7 +6,7 @@ Changes - Apache::SizeLimit change logfile
 
 =over 6
 
-=item 0.91-dev
+=item 0.92-dev
 
   *********** HEADS UP - SHARED CODE BASE - HEADS UP  ***********
   Apache-SizeLimit has been hybridized.
@@ -22,12 +22,14 @@ Skip tests on OS X (darwin) due to broken getrusage(3)
 [Fred Moyer <fred@redhotpenguin.com>, 
  Philip M. Gollucci <pgollucci@p6m7g8.com>]
 
+Added a SUPPORT section to the docs.
+[Dave Rolsky <autarch@urth.org>]
+
+=item 0.91 2007-03-29
+
 Fix Can't call method "child_terminate" on an undefined value
 By add_cleanup_handler() pass $r to _exit_if_to_big() via shift
 [David Wheeler <david@kineticode.com>]
-
-Added a SUPPORT section to the docs.
-[Dave Rolsky <autarch@urth.org>]
 
 =item 0.9 2006-07-12
 
