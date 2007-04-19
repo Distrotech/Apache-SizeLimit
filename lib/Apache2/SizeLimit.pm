@@ -13,18 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package Apache::SizeLimit;
+package Apache2::SizeLimit;
 
 use strict;
 use Config;
 
-use Apache::Constants ();
+use APR::Pool ();
+
+use Apache2::RequestUtil ();
+use Apache2::MPM ();
+use Apache2::Const -compile => qw (DECLINED OK);
+
+use ModPerl::Util ();
+
+die "Apache2::SizeLimit at the moment works only with non-threaded MPMs"
+    if Apache2::MPM->is_threaded();
 
 use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 
-use vars qw($VERSION);
-
-$VERSION = '0.91-dev';
+# 2.x requires 5.6.x+ so 'our' is okay
+our $VERSION = '0.91-dev';
 
 use Apache::SizeLimit::Core qw(
                              $MAX_PROCESS_SIZE
@@ -33,31 +41,30 @@ use Apache::SizeLimit::Core qw(
                              $CHECK_EVERY_N_REQUESTS
                              $START_TIME
                             );
-use vars qw(@ISA);
-@ISA = qw(Apache::SizeLimit::Core);
+our @ISA = qw(Apache::SizeLimit::Core);
 
 __PACKAGE__->set_check_interval(1);
 
 sub handler ($$) {
     my $class = shift;
-    my $r = shift || Apache->request;
+    my $r = shift || Apache2::RequestUtil->request();
 
-    return Apache::Constants::DECLINED() unless $r->is_main();
+    return Apache2::Const::DECLINED unless $r->is_initial_req();
 
     # we want to operate in a cleanup handler
-    if ($r->current_callback eq 'PerlCleanupHandler') {
+    if (ModPerl::Util::current_callback() eq 'PerlCleanupHandler') {
         return $class->_exit_if_too_big($r);
     }
     else {
         $class->add_cleanup_handler($r);
     }
 
-    return Apache::Constants::DECLINED();
+    return Apache2::Const::DECLINED;
 }
 
 sub add_cleanup_handler {
     my $class = shift;
-    my $r = shift || Apache->request;
+    my $r = shift || Apache2::RequestUtil->request();
 
     return unless $r;
     return if $r->pnotes('size_limit_cleanup');
@@ -66,10 +73,9 @@ sub add_cleanup_handler {
     # test it, since apparently it does not push a handler onto the
     # PerlCleanupHandler phase. That means that there's no way to use
     # $r->get_handlers() to check the results of calling this method.
-    $r->push_handlers(
-                      'PerlCleanupHandler',
-                      sub { $class->_exit_if_too_big(shift) }
-                     );
+    # $r->get_handlers() SEGFAULTS at the moment in 2.x
+    $r->pool->cleanup_register(sub { $class->_exit_if_too_big(shift) }, $r);
+
     $r->pnotes(size_limit_cleanup => 1);
 }
 
@@ -77,7 +83,7 @@ sub _exit_if_too_big {
     my $class = shift;
     my $r = shift;
 
-    return Apache::Constants::DECLINED()
+    return Apache2::Const::DECLINED
         if ($class->get_check_interval()
              && ($class->get_and_pinc_request_count % $class->get_check_interval()));
 
@@ -95,13 +101,7 @@ sub _exit_if_too_big {
             $msg .= " LIFETIME=$e seconds";
             $class->_error_log($msg);
 
-            if (IS_WIN32) {
-                # child_terminate() is disabled in win32 Apache
-                CORE::exit(-2);
-            }
-            else {
-                $r->child_terminate();
-            }
+            $r->child_terminate();
         }
         else {
             # this is the main httpd, whose parent is init?
@@ -111,12 +111,15 @@ sub _exit_if_too_big {
         }
     }
 
-    return Apache::Constants::OK();
+    return Apache2::Const::OK;
 }
 
 {
     # Deprecated APIs
-
+    # If you use these, you must set
+    # PerlOptions +GlobalRequest -- we have no $r otherwise
+	# This is differs a from the mp1 series
+	
     sub setmax {
 
         my $class = __PACKAGE__;
@@ -151,28 +154,28 @@ __END__
 
 =head1 NAME
 
-Apache::SizeLimit - Because size does matter.
+Apache2::SizeLimit - Because size does matter.
 
 =head1 SYNOPSIS
 
     <Perl>
-     Apache::SizeLimit->set_max_process_size(150_000);   # Max size in KB
-     Apache::SizeLimit->set_min_shared_size(10_000);     # Min share in KB
-     Apache::SizeLimit->set_max_unshared_size(120_000);  # Max unshared size in KB
+     Apache2::SizeLimit->set_max_process_size(150_000);   # Max size in KB
+     Apache2::SizeLimit->set_min_shared_size(10_000);     # Min share in KB
+     Apache2::SizeLimit->set_max_unshared_size(120_000);  # Max unshared size in KB
     </Perl>
 
-    PerlCleanupHandler Apache::SizeLimit
+    PerlCleanupHandler Apache2::SizeLimit
 
 =head1 DESCRIPTION
 
 ******************************** NOIICE *******************
 
-   This version is only for httpd 1.3.x and mod_perl 1.x
-   series.
+    This version is only for httpd 2.x and mod_perl 2.x
+    series.
 
-   For httpd 2.x / mod_perl 2.x Apache2::SizeLimit 
-   documentation please read the perldoc in 
-   lib/Apache2/SizeLimit.pm
+    For httpd 1.3.x / mod_perl 1.x Apache::SizeLimit 
+    documentation please read the perldoc in 
+    lib/Apache/SizeLimit.pm
 
 ******************************** NOTICE *******************
 
@@ -194,21 +197,21 @@ module simply does not support your platform.
 =head1 API
 
 You can set set the size limits from a Perl module or script loaded by
-Apache by calling the appropriate class method on C<Apache::SizeLimit>:
+Apache by calling the appropriate class method on C<Apache2::SizeLimit>:
 
 =over 4
 
-=item * Apache::SizeLimit->set_max_process_size($size)
+=item * Apache2::SizeLimit->set_max_process_size($size)
 
 This sets the maximum size of the process, including both shared and
 unshared memory.
 
-=item * Apache::SizeLimit->set_max_unshared_size($size)
+=item * Apache2::SizeLimit->set_max_unshared_size($size)
 
 This sets the maximum amount of I<unshared> memory the process can
 use.
 
-=item * Apache::SizeLimit->set_min_shared_size($size)
+=item * Apache2::SizeLimit->set_min_shared_size($size)
 
 This sets the minimum amount of shared memory the process must have.
 
@@ -223,25 +226,25 @@ platform. See L<PER-PLATFORM BEHAVIOR> for more details.
 There are several ways to make this module actually run the code to
 kill a process.
 
-The simplest is to make C<Apache::SizeLimit> a C<PerlCleanupHandler>
+The simplest is to make C<Apache2::SizeLimit> a C<PerlCleanupHandler>
 in your Apache config:
 
-    PerlCleanupHandler Apache::SizeLimit
+    PerlCleanupHandler Apache2::SizeLimit
 
-This will ensure that C<< Apache::SizeLimit->handler() >> is run
+This will ensure that C<< Apache2::SizeLimit->handler() >> is run
 for all requests.
 
 If you want to combine this module with a cleanup handler of your own,
-make sure that C<Apache::SizeLimit> is the last handler run:
+make sure that C<Apache2::SizeLimit> is the last handler run:
 
-    PerlCleanupHandler  Apache::SizeLimit My::CleanupHandler
+    PerlCleanupHandler  Apache2::SizeLimit My::CleanupHandler
 
 Remember, mod_perl will run stacked handlers from right to left, as
 they're defined in your configuration.
 
 If you have some cleanup code you need to run, but stacked handlers
 aren't appropriate for your setup, you can also explicitly call the
-C<< Apache::SizeLimit->handler() >> function from your own cleanup
+C<< Apache2::SizeLimit->handler() >> function from your own cleanup
 handler:
 
     package My::CleanupHandler
@@ -253,15 +256,15 @@ handler:
         # request
         File::Temp::cleanup();
 
-        return Apache::SizeLimit->handler($r);
+        return Apache2::SizeLimit->handler($r);
     }
 
 =over 4
 
-=item * Apache::SizeLimit->add_cleanup_handler($r)
+=item * Apache2::SizeLimit->add_cleanup_handler($r)
 
 You can call this method inside a request to run
-C<Apache::SizeLimit>'s C<handler()> method for just that request. It's
+C<Apache2::SizeLimit>'s C<handler()> method for just that request. It's
 safe to call this method repeatedly -- the cleanup will only be run
 once per request.
 
@@ -275,9 +278,9 @@ every request.
 
 =over 4
 
-=item * Apache::SizeLimit->set_check_interval($interval)
+=item * Apache2::SizeLimit->set_check_interval($interval)
 
-Calling this causes C<Apache::SizeLimit> to only check the process
+Calling this causes C<Apache2::SizeLimit> to only check the process
 size every C<$interval> requests. If you want this to affect all
 processes, make sure to call this during server startup.
 
@@ -314,7 +317,7 @@ Currently supported OSes:
 
 For linux we read the process size out of F</proc/self/statm>. If you
 are worried about performance, you can consider using C<<
-Apache::SizeLimit->set_check_interval() >> to reduce how often this
+Apache2::SizeLimit->set_check_interval() >> to reduce how often this
 read happens.
 
 As of linux 2.6, F</proc/self/statm> does not report the amount of
@@ -327,7 +330,7 @@ F</proc/self/smaps> entry for each process. F</proc/self/smaps>
 reports various sizes for each memory segment of a process and allows
 us to count the amount of shared memory correctly.
 
-If C<Apache::SizeLimit> detects a kernel that supports
+If C<Apache2::SizeLimit> detects a kernel that supports
 F</proc/self/smaps> and the C<Linux::Smaps> module is installed it
 will use that module instead of F</proc/self/statm>.
 
@@ -335,25 +338,25 @@ Reading F</proc/self/smaps> is expensive compared to
 F</proc/self/statm>. It must look at each page table entry of a
 process.  Further, on multiprocessor systems the access is
 synchronized with spinlocks. Again, you might consider using C<<
-Apache::SizeLimit->set_check_interval() >>.
+Apache2::SizeLimit->set_check_interval() >>.
 
 =head3 Copy-on-write and Shared Memory
 
 The following example shows the effect of copy-on-write:
 
   <Perl>
-    require Apache::SizeLimit;
+    require Apache2::SizeLimit;
     package X;
     use strict;
-    use Apache::Constants qw(OK);
+    use Apache2::Const -compile => qw(OK);
 
     my $x = "a" x (1024*1024);
 
     sub handler {
       my $r = shift;
-      my ($size, $shared) = $Apache::SizeLimit->_check_size();
+      my ($size, $shared) = $Apache2::SizeLimit->_check_size();
       $x =~ tr/a/b/;
-      my ($size2, $shared2) = $Apache::SizeLimit->_check_size();
+      my ($size2, $shared2) = $Apache2::SizeLimit->_check_size();
       $r->content_type('text/plain');
       $r->print("1: size=$size shared=$shared\n");
       $r->print("2: size=$size2 shared=$shared2\n");
@@ -407,7 +410,7 @@ F</proc> fs anyway).
 
 According to recent tests on OSX (July, 2006), C<BSD::Resource> simply
 reports zero for process and shared size on that platform, so OSX is
-not supported by C<Apache::SizeLimit>.
+not supported by C<Apache2::SizeLimit>.
 
 =head2 AIX?
 
@@ -461,15 +464,15 @@ memory size limits:
 
 =over 4
 
-=item * $Apache::SizeLimit::MAX_PROCESS_SIZE
+=item * $Apache2::SizeLimit::MAX_PROCESS_SIZE
 
-=item * $Apache::SizeLimit::MIN_SHARE_SIZE
+=item * $Apache2::SizeLimit::MIN_SHARE_SIZE
 
-=item * $Apache::SizeLimit::MAX_UNSHARED_SIZE
+=item * $Apache2::SizeLimit::MAX_UNSHARED_SIZE
 
-=item * $Apache::SizeLimit::CHECK_EVERY_N_REQUESTS
+=item * $Apache2::SizeLimit::CHECK_EVERY_N_REQUESTS
 
-=item * $Apache::SizeLimit::USE_SMAPS
+=item * $Apache2::SizeLimit::USE_SMAPS
 
 =back
 
@@ -480,16 +483,18 @@ It also documented three functions for use from registry scripts:
 
 =over 4
 
-=item * Apache::SizeLimit::setmax()
+=item * Apache2::SizeLimit::setmax()
 
-=item * Apache::SizeLimit::setmin()
+=item * Apache2::SizeLimit::setmin()
 
-=item * Apache::SizeLimit::setmax_unshared()
+=item * Apache2::SizeLimit::setmax_unshared()
 
 =back
 
 Besides setting the appropriate limit, these functions I<also> add a
-cleanup handler to the current request.
+cleanup handler to the current request.  In the 2.x series of mod_perl
+to use the deprecated functions, you must set PerlOptions +GlobalRequest
+accordingly.
 
 =head1 SUPPORT
 

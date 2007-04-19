@@ -4,7 +4,7 @@ use warnings FATAL => 'all';
 use Config;
 use Apache::Test;
 
-# skip all tests in this directory unless mod_perl is enabled
+# skip all tests in this directory unless mod_perl is enabled for 2.x series
 plan tests => 1, \&my_need;
 
 ok 1;
@@ -31,9 +31,10 @@ sub my_need {
         return 0;
     }
 
-    $ok &= need_module('mod_perl.c');
+    $ok &= need_min_apache_version("2.0.48");
 
-    $ok &= need_apache(1);
+    eval { require mod_perl2; };
+    $ok &= $mod_perl2::VERSION && $mod_perl2::VERSION >= 1.99022 ? 1 : 0; ## 2.0.0-RC5+
 
     $ok &= need_min_module_version('Test::Builder' => '0.18_01');
 

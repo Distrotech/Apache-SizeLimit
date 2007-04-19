@@ -5,7 +5,11 @@ for installing any perl module
   $ cd Apache-SizeLimit-0.XX
 
   $ perl Makefile.PL
+    For static  mod_perl use -httpd /path/to/httpd
+    For dynamic mod_perl use -apxs /path/to/apxs
   $ make
   $ sudo make install
 
 for further directions, see the README.
+
+

@@ -26,21 +26,31 @@ Instructions for Apache-SizeLimit Release Manager
     a. login into https://pause.perl.org
     b. menu click: Select Mailinglist/Action
     c. choose APML and share_perms and click go
-    d. click Make somebody else co-maintainer
+    d. click 3.1 Make somebody else co-maintainer
     e. choose the modules to give the perms to
        type the username of the new co-maintainer
     f. if you happen to know that packages were added this release,
        make sure you give the correct permissions to them.
 
+TODO:
 1/2. run pod2text to update the README and commit any changes if neccessary.
+     Decide what to do about having almost identical pod in Apache::SizeLimit
+     and Apache2::SizeLimit
+
+3/4. Configure 
+
+     MAINTAINER_BUILDING_RELEASE=1 perl Makefile.PL
 
 1. 'make dist' - to make sure nothing is missing from the manifest,
    etc. Now test this generated package (not svn) with as many
    configurations as possible on as many platforms as possible.
 
   a. edit ./Changes:
-     - change -dev to -rc\d+ starting with -rc1
-     - don't commit this (see dev@ archives)
+     - find lib -type f -name "*.pm" | \
+         xargs perl -pi -e 's,0.91-dev,0.91-rc1,g'
+     - perl -pi -e 's,0.91-dev,0.91-rc1,g' Changes
+
+     - don't commit these (see dev@ archives)
 
   b. nuke any preinstalled Apache-SizeLimit libs and run 'make test'
 
@@ -51,11 +61,13 @@ Instructions for Apache-SizeLimit Release Manager
      % APACHE_TEST_PRETEND_NO_LWP=1 make test
 
 2. once confident that the package is good, upload a release candidate
-   to perl.apache.org/~username and post 24 hour-ish candidate alert
+   to people.apache.org/~username and post 24 hour-ish candidate alert
    to the various lists
 
      o dev/perl.apache.org
      o modperl/perl.apache.org
+
+  Subject: [RELEASE CANDIDATE] Apache-SizeLimit 0.91 RC\d+
 
    (or maybe longer to give most people a chance to catch up). no need
    to tag this package
@@ -90,7 +102,7 @@ Instructions for Apache-SizeLimit Release Manager
 5. Announce the package
 
   a. post ... to the modperl, announce lists
-  Subject: [ANNOUNCE] Apache-SizeLimit 0.92
+  Subject: [ANNOUNCE] Apache-SizeLimit 0.91
      include 
   - MD5 sig (as it comes from CPAN upload announce).
   - the latest Changes
