@@ -40,6 +40,9 @@ use Apache::SizeLimit::Core qw(
                              $MIN_SHARE_SIZE
                              $CHECK_EVERY_N_REQUESTS
                              $START_TIME
+                             $USE_SMAPS
+                             $VERSION
+                             $REQUEST_COUNT
                             );
 our @ISA = qw(Apache::SizeLimit::Core);
 

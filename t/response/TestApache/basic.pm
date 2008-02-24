@@ -15,7 +15,7 @@ use constant TEN_MB => 1024 * 10;
 sub handler {
     my $r = shift;
 
-    plan $r, tests => 12;
+    plan $r, tests => 13;
 
     ok( ! Apache::SizeLimit->_limits_are_exceeded(),
         'check that _limits_are_exceeded() returns false without any limits set' );
@@ -23,6 +23,15 @@ sub handler {
     {
         my ( $size, $shared ) = Apache::SizeLimit->_check_size();
         cmp_ok( $size, '>', 0, 'proc size is reported > 0' );
+
+        {
+            # test with USE_SMAPS=0
+            my $smaps = $Apache::SizeLimit::USE_SMAPS;
+            $Apache::SizeLimit::USE_SMAPS = 0;
+            my ( $size, $shared ) = Apache::SizeLimit->_check_size();
+            cmp_ok( $size, '>', 0, 'proc size is reported > 0' );
+            $Apache::SizeLimit::USE_SMAPS = $smaps;
+        }
 
     SKIP:
         {

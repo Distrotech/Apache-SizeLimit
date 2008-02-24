@@ -8,6 +8,13 @@ Changes - Apache::SizeLimit change logfile
 
 =item 0.92-dev
 
+Export USE_SMAPS, VERSION, and REQUEST_COUNT to Apache::SizeLimit
+from Apache::SizeLimit::Core.
+Call _platform_check_size as a class method to prevent error when
+USE_SMAPS=0, RT #33303
+Reported by: jgoodridge@alum.dartmouth.edu
+[Fred Moyer <fred@redhotpenguin.com>]
+
   *********** HEADS UP - SHARED CODE BASE - HEADS UP  ***********
   Apache-SizeLimit has been hybridized.
   It has been split into 3 packages.  

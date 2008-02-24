@@ -38,6 +38,9 @@ use vars qw(
 @ISA = qw(Exporter);
 
 @EXPORT_OK = qw(
+                $VERSION
+                $REQUEST_COUNT
+                $USE_SMAPS
                 $MAX_PROCESS_SIZE
                 $MAX_UNSHARED_SIZE
                 $MIN_SHARE_SIZE
@@ -111,7 +114,9 @@ sub _limits_are_exceeded {
 }
 
 sub _check_size {
-    my ($size, $share) = _platform_check_size();
+    my $class = shift;
+
+    my ($size, $share) = $class->_platform_check_size();
 
     return ($size, $share, $size - $share);
 }
