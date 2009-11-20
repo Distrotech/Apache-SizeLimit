@@ -131,7 +131,9 @@ sub _load {
 }
 
 BEGIN {
-    if ($Config{'osname'} eq 'solaris' && $Config{'osvers'} >= 2.6 ) {
+    my ($major,$minor) = split(/\./, $Config{'osvers'});
+    if ($Config{'osname'} eq 'solaris' && 
+        (($major > 2) || ($major == 2 && $minor >= 6))) {
         *_platform_check_size   = \&_solaris_2_6_size_check;
         *_platform_getppid = \&_perl_getppid;
     }
