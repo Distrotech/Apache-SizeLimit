@@ -73,6 +73,10 @@ TODO:
 
   a. if problems are detected during stage 2, repeat stages 1 and 2.
 
+  $ md5 Apache-SizeLimit-0.92-rc1.tar.gz > Apache-SizeLimit-0.92-rc1.tar.gz.md5
+  $ sha256 Apache-SizeLimit-0.92-rc1.tar.gz > Apache-SizeLimit-0.92-rc1.tar.gz.sha256
+  $ gpg --detach-sign --armor Apache-SizeLimit-0.92-rc1.tar.gz
+
 3. when the package has been reported to be good, prepare a new
    package to be released
 
