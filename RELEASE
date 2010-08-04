@@ -66,7 +66,7 @@ TODO:
      o dev/perl.apache.org
      o modperl/perl.apache.org
 
-  Subject: [RELEASE CANDIDATE] Apache-SizeLimit 0.91 RC\d+
+  Subject: [RELEASE CANDIDATE] Apache-SizeLimit 0.92 RC\d+
 
    (or maybe longer to give most people a chance to catch up). no need
    to tag this package
