@@ -46,9 +46,8 @@ TODO:
    configurations as possible on as many platforms as possible.
 
   a. edit ./Changes:
-     - find lib -type f -name "*.pm" | \
-         xargs perl -pi -e 's,0.91-dev,0.91-rc1,g'
-     - perl -pi -e 's,0.91-dev,0.91-rc1,g' Changes
+     - find lib -type f \( -name "*.pm" -o -name "Changes" \) | \
+         xargs perl -pi -e 's,0.91-dev,0.92-rc1,g'
 
      - don't commit these (see dev@ archives)
 
