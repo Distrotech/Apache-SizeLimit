@@ -101,7 +101,7 @@ TODO:
 5. Announce the package
 
   a. post ... to the modperl, announce lists
-  Subject: [ANNOUNCE] Apache-SizeLimit 0.91
+  Subject: [ANNOUNCE] Apache-SizeLimit 0.92
      include 
   - MD5 sig (as it comes from CPAN upload announce).
   - the latest Changes
@@ -113,7 +113,7 @@ TODO:
   b. edit ./Changes:
      - start a new item with incremented version + '-dev'
 
-  =item 0.92-dev
+  =item 0.93-dev
 
   c. bump up version numbers in this file to make it easier to do the
      next release.
@@ -121,4 +121,4 @@ TODO:
      $ perl -pi -e 's/(\d+)\.(\d+)/join(".", $1, $2+1)/eg' RELEASE
 
   d. commit Changes
-     % svn ci -m "start 0.92-dev cycle" Changes RELEASE lib/Apache/SizeLimit.pm
+     % svn ci -m "start 0.93-dev cycle" Changes RELEASE lib/Apache/SizeLimit.pm
