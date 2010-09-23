@@ -81,7 +81,7 @@ TODO:
    package to be released
 
   a. edit ./Changes:
-     - remove -rc\d+
+     - remove -rc\d+ (also remove this from modules)
      - add release date
 
   b. rerun:
@@ -89,8 +89,8 @@ TODO:
      make sure tag looks right
      % make -n tag
 
-  c. commit Changes
-     % svn ci Changes
+  c. commit Changes and modules
+     % svn ci Changes lib/
 
   d. tag
      % make tag

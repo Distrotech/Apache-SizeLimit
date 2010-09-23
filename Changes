@@ -6,7 +6,7 @@ Changes - Apache::SizeLimit change logfile
 
 =over 6
 
-=item 0.92-dev
+=item 0.92 2010-09-23
 
 Export USE_SMAPS, VERSION, and REQUEST_COUNT to Apache::SizeLimit
 from Apache::SizeLimit::Core.
