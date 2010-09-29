@@ -16,6 +16,8 @@
 package Apache2::SizeLimit;
 
 use strict;
+use warnings;
+
 use Config;
 
 use APR::Pool ();
@@ -32,7 +34,7 @@ die "Apache2::SizeLimit at the moment works only with non-threaded MPMs"
 use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 
 # 2.x requires 5.6.x+ so 'our' is okay
-our $VERSION = '0.93-dev';
+our $VERSION = '0.93-rc1';
 
 use Apache::SizeLimit::Core qw(
                              $MAX_PROCESS_SIZE
@@ -48,18 +50,17 @@ our @ISA = qw(Apache::SizeLimit::Core);
 
 __PACKAGE__->set_check_interval(1);
 
-sub handler ($$) {
-    my $class = shift;
+sub handler {
     my $r = shift || Apache2::RequestUtil->request();
 
     return Apache2::Const::DECLINED unless $r->is_initial_req();
 
     # we want to operate in a cleanup handler
     if (ModPerl::Util::current_callback() eq 'PerlCleanupHandler') {
-        return $class->_exit_if_too_big($r);
+        return __PACKAGE__->_exit_if_too_big($r);
     }
     else {
-        $class->add_cleanup_handler($r);
+        __PACKAGE__->add_cleanup_handler($r);
     }
 
     return Apache2::Const::DECLINED;

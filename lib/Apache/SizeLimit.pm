@@ -16,6 +16,8 @@
 package Apache::SizeLimit;
 
 use strict;
+use warnings;
+
 use Config;
 
 use Apache::Constants ();
@@ -24,7 +26,7 @@ use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 
 use vars qw($VERSION);
 
-$VERSION = '0.93-dev';
+$VERSION = '0.93-rc1';
 
 use Apache::SizeLimit::Core qw(
                              $MAX_PROCESS_SIZE
@@ -41,18 +43,17 @@ use vars qw(@ISA);
 
 __PACKAGE__->set_check_interval(1);
 
-sub handler ($$) {
-    my $class = shift;
+sub handler {
     my $r = shift || Apache->request;
 
     return Apache::Constants::DECLINED() unless $r->is_main();
 
     # we want to operate in a cleanup handler
     if ($r->current_callback eq 'PerlCleanupHandler') {
-        return $class->_exit_if_too_big($r);
+        return __PACKAGE__->_exit_if_too_big($r);
     }
     else {
-        $class->add_cleanup_handler($r);
+        __PACKAGE__->add_cleanup_handler($r);
     }
 
     return Apache::Constants::DECLINED();

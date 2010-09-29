@@ -16,6 +16,7 @@
 package Apache::SizeLimit::Core;
 
 use strict;
+use warnings;
 
 use Config;
 use Exporter;
@@ -48,7 +49,7 @@ use vars qw(
                 $START_TIME
                );
 
-$VERSION = '0.93-dev';
+$VERSION = '0.93-rc1';
 
 $REQUEST_COUNT          = 1;
 
