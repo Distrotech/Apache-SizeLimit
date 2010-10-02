@@ -26,7 +26,7 @@ use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 
 use vars qw($VERSION);
 
-$VERSION = '0.93-rc1';
+$VERSION = '0.93';
 
 use Apache::SizeLimit::Core qw(
                              $MAX_PROCESS_SIZE
@@ -158,6 +158,8 @@ __END__
 Apache::SizeLimit - Because size does matter.
 
 =head1 SYNOPSIS
+
+    PerlModule Apache::SizeLimit
 
     <Perl>
      Apache::SizeLimit->set_max_process_size(150_000);   # Max size in KB

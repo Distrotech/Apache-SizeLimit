@@ -2,6 +2,8 @@ NAME
     Apache2::SizeLimit - Because size does matter.
 
 SYNOPSIS
+
+        PerlLoadModule Apache2::SizeLimit
         <Perl>
          Apache2::SizeLimit->set_max_process_size(150_000);   # Max size in KB
          Apache2::SizeLimit->set_min_shared_size(10_000);     # Min share in KB
