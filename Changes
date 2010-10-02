@@ -6,6 +6,9 @@ Changes - Apache::SizeLimit change logfile
 
 =over 6
 
+0.94-dev
+
+
 =item 0.93 2010-10-02
 
 Add PerlModule and PerlLoadModule doc directives.
