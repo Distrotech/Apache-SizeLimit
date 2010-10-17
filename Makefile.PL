@@ -5,6 +5,7 @@ use Config;
 my %prereqs = ();
 my %mp2 = ( mod_perl2 => 1.99022 );
 my %mp1 = ( mod_perl  => 0 );
+my $at_min_ver = 1.34;
 
 my $mp_gen;
 if ($ENV{MOD_PERL_2_BUILD}) {
@@ -72,6 +73,11 @@ if ($ENV{MOD_PERL_2_BUILD}) {
 sub check_for_apache_test {
     return unless eval {
         require Apache::Test;
+         if ($Apache::Test::VERSION < $at_min_ver) {
+            die "Apache::Test version is " . $Apache::Test::VERSION . 
+                ", minimum version required is $at_min_ver" . 
+                ", tests will be skipped\n";
+        }
         require Apache::TestMM;
         require Apache::TestRunPerl;
         1;
@@ -80,13 +86,6 @@ sub check_for_apache_test {
     Apache::TestMM::filter_args();
 
     my %args = @Apache::TestMM::Argv;
-
-    return 0
-        unless (( Apache::TestConfig->can('custom_config_path')
-                  and -f Apache::TestConfig->custom_config_path())
-                or $args{apxs} or $args{httpd}
-                or $ENV{APACHE_TEST_HTTPD} or $ENV{APACHE_TEST_APXS});
-
 
     Apache::TestRunPerl->generate_script();
 
@@ -145,6 +144,7 @@ sub satisfy_mp_generation {
 }
 
 sub require_mod_perl {
+
     eval { require mod_perl };
     eval { require mod_perl2 }  if ($@);
     die "Can't find mod_perl installed\nThe error was: $@" if $@;
@@ -194,6 +194,15 @@ EOF
         eval { require mod_perl };
         if ($@) {
             # if we don't have mp1, check for mp2
+            # see if we are in the mp2 build structure
+            eval { require File::Spec };
+            unless ($@) {
+                my $mplib = File::Spec->catdir('..', 'lib');
+                unshift @INC, $mplib if -e File::Spec->catfile($mplib,'mod_perl2.pm');
+                my $atlib = File::Spec->catdir('../', 'Apache-Test', 'lib');
+                unshift @INC, $atlib if -d $atlib;
+            } 
+
             eval { require mod_perl2 } if ($@);
             unless ($@) {
                 $wanted = 2;
@@ -242,4 +251,25 @@ sub clean {
     return $self->Apache::TestMM::clean(@_) if $HAS_APACHE_TEST;
 
     return $self->SUPER::clean(@_);
+}
+
+sub constants {
+    my $self = shift;
+
+    my $string = $self->MM::constants;
+
+    # mp2 installs A-T into INSTALLSITEARCH, so in order to avoid
+    # problems when users forget 'make install UNINST=1', trick MM into
+    # installing pure perl modules to the sitearch location, when A-T is
+    # not installed as a part of mp2 build
+    if (!$ENV{MOD_PERL_2_BUILD}) {
+        $string .= <<'EOI';
+
+# install into the same location as mod_perl 2.0
+INSTALLSITELIB = $(INSTALLSITEARCH)
+DESTINSTALLSITELIB = $(DESTINSTALLSITEARCH)
+EOI
+    }
+
+    $string;
 }

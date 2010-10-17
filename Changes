@@ -8,6 +8,8 @@ Changes - Apache::SizeLimit change logfile
 
 0.94-dev
 
+Install Apache::SizeLimit in arch specific location, the same as mod_perl.  This prevents problems when A-SL is built outside the mod_perl build tree.
+[Fred Moyer]
 
 =item 0.93 2010-10-02
 
