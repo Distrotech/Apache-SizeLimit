@@ -34,7 +34,7 @@ die "Apache2::SizeLimit at the moment works only with non-threaded MPMs"
 use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 
 # 2.x requires 5.6.x+ so 'our' is okay
-our $VERSION = '0.94';
+our $VERSION = '0.95';
 
 use Apache::SizeLimit::Core qw(
                              $MAX_PROCESS_SIZE
