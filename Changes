@@ -6,7 +6,7 @@ Changes - Apache::SizeLimit change logfile
 
 =over 6
 
-0.94-dev
+=item 0.94 2011-01-19
 
 Install Apache::SizeLimit in arch specific location, the same as mod_perl.  This prevents problems when A-SL is built outside the mod_perl build tree.
 [Fred Moyer]
