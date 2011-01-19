@@ -26,7 +26,7 @@ use constant IS_WIN32 => $Config{'osname'} eq 'MSWin32' ? 1 : 0;
 
 use vars qw($VERSION);
 
-$VERSION = '0.95';
+$VERSION = '0.96';
 
 use Apache::SizeLimit::Core qw(
                              $MAX_PROCESS_SIZE

@@ -6,6 +6,8 @@ Changes - Apache::SizeLimit change logfile
 
 =over 6
 
+=item 0.96-dev
+
 =item 0.95 2011-01-19
 
 Fix erroneous version in Core.pm for 0.94 release. [fred]
