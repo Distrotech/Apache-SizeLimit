@@ -17,8 +17,13 @@ sub handler {
 
     plan $r, tests => 10;
 
-    ok( ! Apache2::SizeLimit->_limits_are_exceeded(),
-        'check that _limits_are_exceeded() returns false without any limits set' );
+    {
+        local ($Apache::SizeLimit::Core::MAX_PROCESS_SIZE,
+               $Apache::SizeLimit::Core::MIN_SHARE_SIZE,
+               $Apache::SizeLimit::Core::MAX_UNSHARED_SIZE);
+        ok( ! Apache2::SizeLimit->_limits_are_exceeded(),
+            'check that _limits_are_exceeded() returns false without any limits set' );
+    }
 
     {
         my ( $size, $shared ) = Apache2::SizeLimit->_check_size();
