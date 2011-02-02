@@ -8,6 +8,10 @@ Changes - Apache::SizeLimit change logfile
 
 =item 0.96-dev
 
+Subtest 1 checks that Apache2::SizeLimit->_limits_are_exceeded() returns
+false without any limits. But if the test runs near the end of the test
+suite it may very well be that some other test has set a limit. [Torsten]
+
 =item 0.95 2011-01-19
 
 Fix erroneous version in Core.pm for 0.94 release. [fred]
