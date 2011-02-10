@@ -117,9 +117,9 @@ sub _limits_are_exceeded {
 sub _check_size {
     my $class = shift;
 
-    my ($size, $share) = $class->_platform_check_size();
+    my ($size, $share, $unshared) = $class->_platform_check_size();
 
-    return ($size, $share, $size - $share);
+    return ($size, $share, defined $unshared ? $unshared : $size - $share);
 }
 
 sub _load {
@@ -176,7 +176,9 @@ sub _linux_smaps_size_check {
     return $class->_linux_size_check() unless $USE_SMAPS;
 
     my $s = Linux::Smaps->new($$)->all;
-    return ($s->size, $s->shared_clean + $s->shared_dirty);
+    return ($s->size,
+	    $s->shared_clean + $s->shared_dirty,
+	    $s->private_clean + $s->private_dirty);
 }
 
 sub _linux_size_check {
