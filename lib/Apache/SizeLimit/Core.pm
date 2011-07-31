@@ -49,7 +49,7 @@ use vars qw(
                 $START_TIME
                );
 
-$VERSION = '0.96';
+$VERSION = '0.96-rc2';
 
 $REQUEST_COUNT          = 1;
 
@@ -143,7 +143,7 @@ BEGIN {
 
         *_platform_getppid = \&_linux_getppid;
 
-        if (eval { require Linux::Smaps } && Linux::Smaps->new($$)) {
+        if (eval { require Linux::Smaps && Linux::Smaps->new($$) }) {
             $USE_SMAPS = 1;
             *_platform_check_size = \&_linux_smaps_size_check;
         }

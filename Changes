@@ -6,7 +6,12 @@ Changes - Apache::SizeLimit change logfile
 
 =over 6
 
-=item 0.96-dev
+=item 0.96-rc1
+
+eval Linux::Smaps->new call when checking for /proc/self/smaps
+[Christian Ruppert <idl0r@qasi.de>]
+
+Require Apache::Test 1.36 [Fred]
 
 Unshared size is now interpreted as RSS - shared instead of VSIZE - shared
 on Linux [Torsten]

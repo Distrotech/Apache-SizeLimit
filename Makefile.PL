@@ -5,7 +5,7 @@ use Config;
 my %prereqs = ();
 my %mp2 = ( mod_perl2 => 1.99022 );
 my %mp1 = ( mod_perl  => 0 );
-my $at_min_ver = 1.34;
+my $at_min_ver = 1.36;
 
 my $mp_gen;
 if ($ENV{MOD_PERL_2_BUILD}) {
