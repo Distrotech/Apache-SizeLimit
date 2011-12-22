@@ -6,7 +6,7 @@ Changes - Apache::SizeLimit change logfile
 
 =over 6
 
-=item 0.96-rc2
+=item 0.96 2011-12-21
 
 eval Linux::Smaps->new call when checking for /proc/self/smaps
 [Christian Ruppert <idl0r@qasi.de>]
