@@ -8,8 +8,10 @@ my %mp1 = ( mod_perl  => 0 );
 my $at_min_ver = 1.36;
 
 my $mp_gen;
+# MOD_PERL_2_BUILD is set from building from mod_perl Makefile.PL which should
+# also set MP_APXS
 if ($ENV{MOD_PERL_2_BUILD}) {
-    push @ARGV, "-apxs $ENV{MP_APXS}";
+    push @ARGV, "-apxs", $ENV{MP_APXS};
     my $mp_gen = satisfy_mp_generation(2);
 }
 else {
@@ -64,10 +66,6 @@ else {
                                NAME            => "Apache2::SizeLimit",
                                ABSTRACT_FROM   => 'lib/Apache2/SizeLimit.pm',
                               );
-}
-
-if ($ENV{MOD_PERL_2_BUILD}) {
-    pop @ARGV;
 }
 
 sub check_for_apache_test {
