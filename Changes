@@ -6,6 +6,8 @@ Changes - Apache::SizeLimit change logfile
 
 =over 6
 
+=item 0.98-dev
+
 =item 0.97 2012-04-02
 
 Set the -apxs argument correctly when building from mod_perl.
