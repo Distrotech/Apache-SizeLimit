@@ -49,7 +49,7 @@ use vars qw(
                 $START_TIME
                );
 
-$VERSION = '0.97-dev';
+$VERSION = '0.97-rc1';
 
 $REQUEST_COUNT          = 1;
 
